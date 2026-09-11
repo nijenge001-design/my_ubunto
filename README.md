@@ -276,56 +276,544 @@ ide-update
 
 # 📚 Usage Examples
 
-## Docker Compose Workflow
-
-```bash
-# Build and start all services
-dc-ub
-
-# Follow application logs
-dc-l app
-
-# Open a shell in the database container
-dc-e db bash
-
-# Completely reset and rebuild the environment
-dc-db
-```
-
-
-## Laravel Development
-
-```bash
-# Create a controller
-mctl UserController
-
-# Run migrations
-mg
-
-# Start a queue worker
-qw
-
-# List routes
-rl
-```
-
-
-## Project Archives
-
-```bash
-# Archive the current project
-garc MyApp
-
-# Archive to OneDrive
-gar_one MyApp
-
-# Archive to a specific directory
-gout ~/backups MyApp
-```
-
+The examples below show typical development workflows and how the aliases can be combined.
 
 ---
 
+## 🐳 Docker Workflow
+
+### Check the Docker environment
+
+```bash
+# Show running containers
+d-ps
+
+# Show all containers, including stopped containers
+d-psa
+
+# Show available images
+d-images
+
+# Show container port mappings
+d-port
+
+# Show live CPU and memory usage
+d-top
+```
+
+### Inspect application logs
+
+```bash
+# Follow container logs
+d-logs my-app
+
+# Follow the last 100 lines and continue streaming
+d-logs-n my-app
+```
+
+### Open a container shell
+
+```bash
+# Open a shell using the helper
+docker-shell my-app
+
+# Explicitly use Bash
+docker-shell my-app bash
+
+# Explicitly use sh
+docker-shell my-app sh
+```
+
+---
+
+## 🐙 Docker Compose Workflow
+
+### Start a project
+
+```bash
+# Start existing containers in the background
+dc-u
+
+# Build images first, then start the services
+dc-ub
+
+# Check service status
+dc-ps
+```
+
+### Work with logs
+
+```bash
+# Follow logs for every service
+dc-l
+
+# Follow logs for one service
+dc-service-logs app
+
+# Follow the last 200 lines of a service
+dc-service-logs app 200
+```
+
+### Run commands inside services
+
+```bash
+# Open a Bash shell in the database service
+dc-e db bash
+
+# Open a shell in the application service
+dc-service-shell app
+
+# Use sh when Bash is unavailable
+dc-service-shell app sh
+```
+
+### Rebuild a single service
+
+```bash
+# Rebuild and start one service
+dc-service-up app
+
+# Restart one service
+dc-service-re app
+```
+
+### Reset the development environment
+
+```bash
+# Stop containers and remove volumes
+dc-dv
+
+# Stop containers, remove volumes, and remove orphans
+dc-do
+
+# Complete project reset
+dc-db
+```
+
+> **Warning:** Reset commands can remove database volumes and development data. Use them only when you intentionally want a clean environment.
+
+---
+
+## 🎯 Laravel Workflow
+
+### Start a Laravel project
+
+```bash
+# Create a new Laravel application
+ln my-project
+
+# Enter the project
+cd my-project
+
+# Start the development environment
+crd
+```
+
+### Use Artisan quickly
+
+Instead of typing:
+
+```bash
+php artisan route:list
+```
+
+you can use:
+
+```bash
+a route:list
+```
+
+The `a` alias is simply a shorter way to run Artisan commands.
+
+### Generate a feature
+
+```bash
+# Create a controller
+mctl EmployeeController
+
+# Create a model
+mmo Employee
+
+# Create a migration
+mmg create_employees_table
+
+# Create a form request
+mr StoreEmployeeRequest
+
+# Create an API resource
+mrs EmployeeResource
+
+# Create a policy
+mp EmployeePolicy
+
+# Create a job
+mj ProcessEmployeeImport
+```
+
+### Typical model + migration workflow
+
+```bash
+# Create the model
+mmo Employee
+
+# Create a migration
+mmg create_employees_table
+
+# Run the migration
+mg
+
+# Check migration status
+mgs
+```
+
+### Working with migrations
+
+```bash
+# Run pending migrations
+mg
+
+# Check migration status
+mgs
+
+# Roll back the latest batch
+mgb
+
+# Refresh all migrations
+mgr
+
+# Drop all tables and rebuild the database
+mgf
+```
+
+> **Warning:** `mgf` removes the existing database tables before rebuilding them. Do not use it against a production database.
+
+---
+
+## ⚡ Livewire Workflow
+
+### Create a Livewire component
+
+```bash
+mlw EmployeeTable
+```
+
+### Create a Livewire page
+
+```bash
+mlwp Employees/Index
+```
+
+### Create a Livewire form
+
+```bash
+lwf EmployeeForm
+```
+
+### Create a Livewire layout
+
+```bash
+lwl AppLayout
+```
+
+A common feature workflow might look like:
+
+```bash
+# Create the model and migration
+mmo Employee
+mmg create_employees_table
+
+# Create the Livewire page
+mlwp Employees/Index
+
+# Run migrations
+mg
+```
+
+---
+
+## 📬 Laravel Queue Workflow
+
+### Start a worker
+
+```bash
+qw
+```
+
+### Monitor failed jobs
+
+```bash
+# List failed jobs
+qf
+
+# Retry a specific failed job
+qrt 5
+```
+
+### Restart workers
+
+After deploying new code:
+
+```bash
+qr
+```
+
+This tells running queue workers to restart gracefully.
+
+---
+
+## 🔧 Git Workflow
+
+### Check your changes
+
+```bash
+gs
+```
+
+### Stage and commit changes
+
+```bash
+ga
+gc "Add employee management aliases"
+```
+
+### Push changes
+
+```bash
+gp
+```
+
+### Pull changes
+
+```bash
+gl
+```
+
+### Undo the latest commit but keep the changes
+
+```bash
+greset1
+```
+
+> `greset1` uses a soft reset, so your changes remain available.
+
+### Git workflow example
+
+```bash
+# 1. Check the current state
+gs
+
+# 2. Stage changes
+ga
+
+# 3. Commit
+gc "Update Bash aliases documentation"
+
+# 4. Push
+gp
+```
+
+---
+
+## 📦 Project Archive Workflow
+
+### Archive the current project
+
+```bash
+garc MyApp
+```
+
+### Archive selected paths
+
+```bash
+garc MyApp app routes resources
+```
+
+### Archive to OneDrive
+
+```bash
+gar_one MyApp
+```
+
+### Archive to a custom location
+
+```bash
+gout ~/backups MyApp
+```
+
+### Example backup routine
+
+```bash
+# Create a local backup
+gout ~/backups MyApp
+
+# Create an additional OneDrive backup
+gar_one MyApp
+```
+
+---
+
+## 🧰 Helper Function Examples
+
+### Safe Docker cleanup
+
+```bash
+docker-clean-safe
+```
+
+Use this when you want to clean unused Docker resources while keeping volumes.
+
+### View Docker resources
+
+```bash
+docker-summary
+```
+
+### Follow timestamped logs
+
+```bash
+docker-logs-with-time my-app
+```
+
+Or specify the number of lines:
+
+```bash
+docker-logs-with-time my-app 200
+```
+
+---
+
+## 🔄 Example: Full Laravel + Docker Development Workflow
+
+A typical project session could look like this:
+
+```bash
+# Go to the project
+cd ~/projects/my-erp
+
+# Start the Docker environment
+dc-ub
+
+# Check services
+dc-ps
+
+# Open the application container
+dc-e app bash
+
+# Inside the container:
+mg
+mgs
+
+# Leave the container
+exit
+
+# Follow application logs
+dc-service-logs app
+
+# Check Git changes
+gs
+
+# Commit the completed work
+ga
+gc "Update employee management"
+gp
+```
+
+---
+
+## 🆘 Troubleshooting Examples
+
+### Check whether services are listening
+
+```bash
+ports
+```
+
+### Check the machine IP address
+
+```bash
+myip
+```
+
+### Reload all aliases after editing `.bash_aliases`
+
+```bash
+sb
+```
+
+### Verify an alias
+
+```bash
+type a
+type dc-u
+type mctl
+```
+
+You can also list the command behind an alias:
+
+```bash
+alias a
+alias dc-u
+alias gs
+```
+
+---
+
+## 🧭 Quick "Which Command Should I Use?"
+
+| Task | Command |
+|---|---|
+| Reload Bash | `sb` |
+| Check Git status | `gs` |
+| Start Docker Compose | `dc-u` |
+| Build + start Compose | `dc-ub` |
+| View Compose status | `dc-ps` |
+| Follow Compose logs | `dc-l` |
+| Open a container shell | `docker-shell <container>` |
+| Run Artisan | `a <command>` |
+| Create controller | `mctl <name>` |
+| Create model | `mmo <name>` |
+| Create migration | `mmg <name>` |
+| Run migrations | `mg` |
+| Check migration status | `mgs` |
+| Create Livewire component | `mlw <name>` |
+| Start queue worker | `qw` |
+| List failed jobs | `qf` |
+| Retry failed job | `qrt <id>` |
+| Create project archive | `garc <ProjectName>` |
+| Archive to OneDrive | `gar_one <ProjectName>` |
+| Show listening ports | `ports` |
+
+---
+
+## 💡 Recommended Workflow
+
+For day-to-day development, a simple pattern is:
+
+```bash
+# Start
+dc-ub
+
+# Check
+dc-ps
+
+# Develop
+mctl EmployeeController
+mmo Employee
+mg
+
+# Monitor
+dc-service-logs app
+
+# Verify
+gs
+
+# Commit
+ga
+gc "Implement employee management"
+gp
+```
+
+This keeps the common workflow short while still making each command easy to understand.
 # ⚙️ Customization
 
 ## Configure OneDrive
