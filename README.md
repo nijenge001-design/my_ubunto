@@ -1,121 +1,164 @@
 # Bash Aliases Collection
 
-A comprehensive collection of shell aliases and helper functions for **Docker**, **Docker Compose**, **Laravel**, **Git**, and general development workflows.
+A practical Bash toolkit for speeding up common **Docker, Docker Compose, Laravel, Livewire, Git, Node/NPM, and development workflows**.
 
-## Features
+The collection provides short aliases for repetitive commands and helper functions for common maintenance tasks.
 
-- 🐳 **Docker** – Container, image, network, and volume management
-- 🐙 **Docker Compose** – Service orchestration shortcuts
-- 🎯 **Laravel** – Artisan commands, migrations, queues, and generators
-- ⚡ **Livewire** – Component generation shortcuts
-- 🔧 **Git** – Common git operations and archive helpers
-- 📦 **Node/NPM** – Frontend build shortcuts
-- 🛠️ **Helper Functions** – Safe cleanup, container shells, service-specific operations
+---
 
-## Installation
+## ✨ What This Includes
 
-1. **Copy the aliases file** to your home directory:
-   ```bash
-   cp .bash_aliases ~/.bash_aliases
-   ```
+| Area | What you get |
+|---|---|
+| 🐳 **Docker** | Container, image, network, volume, cleanup, shell, log, and resource shortcuts |
+| 🐙 **Docker Compose** | Start, stop, rebuild, reset, logs, service management, and container access |
+| 🎯 **Laravel** | Artisan shortcuts, generators, migrations, queues, and development helpers |
+| ⚡ **Livewire** | Component, page, form, and layout generators |
+| 🔧 **Git** | Common Git operations and project archive helpers |
+| 📦 **Node/NPM** | Frontend development shortcuts |
+| 🛠️ **Helper Functions** | Safe cleanup, service operations, container shells, logs, and archives |
 
-2. **Ensure `~/.bashrc` sources it** (add if not present):
-   ```bash
-   # In ~/.bashrc
-   if [ -f ~/.bash_aliases ]; then
-       . ~/.bash_aliases
-   fi
-   ```
+These are the main categories already covered by the original collection. 
 
-3. **Reload your shell**:
-   ```bash
-   source ~/.bashrc
-   ```
+---
 
-## Quick Reference
+# 🚀 Installation
 
-### General / Shell
+## 1. Copy the aliases file
 
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `sb` | `source ~/.bashrc` | Reload bash configuration |
-| `cls` | `clear` | Clear terminal |
-| `ll` | `ls -lah` | List all files with details |
+From the directory containing this file:
+
+```bash
+cp .bash_aliases ~/.bash_aliases
+```
+
+## 2. Load it from `~/.bashrc`
+
+Add the following to `~/.bashrc` if it is not already present:
+
+```bash
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+```
+
+## 3. Reload Bash
+
+```bash
+source ~/.bashrc
+```
+
+The original installation flow uses these same three steps: copy the file, source it from `~/.bashrc`, then reload the shell. 
+
+---
+
+# ⚡ Quick Reference
+
+## General / Shell
+
+| Alias | Command | Purpose |
+|---|---|---|
+| `sb` | `source ~/.bashrc` | Reload Bash configuration |
+| `cls` | `clear` | Clear the terminal |
+| `ll` | `ls -lah` | List files with details |
 | `..` | `cd ..` | Go up one directory |
 | `...` | `cd ../..` | Go up two directories |
-| `myip` | `hostname -I` | Show local IP |
+| `myip` | `hostname -I` | Show local IP addresses |
 | `ports` | `netstat -tulnp` | Show listening ports |
 
-### Git
 
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `gs` | `git status` | Show status |
+---
+
+# 🔧 Git
+
+| Alias | Command | Purpose |
+|---|---|---|
+| `gs` | `git status` | Show working-tree status |
 | `ga` | `git add .` | Stage all changes |
-| `gc` | `git commit -m` | Commit with message |
-| `gp` | `git push` | Push to remote |
-| `gl` | `git pull` | Pull from remote |
-| `greset1` | `git reset --soft HEAD~1` | Undo last commit (keep staged) |
-| `greset` | `git update-ref -d HEAD` | Delete HEAD ref ⚠️ |
+| `gc` | `git commit -m` | Create a commit with a message |
+| `gp` | `git push` | Push commits to the remote |
+| `gl` | `git pull` | Pull changes from the remote |
+| `greset1` | `git reset --soft HEAD~1` | Undo the last commit and keep changes staged |
+| `greset` | `git update-ref -d HEAD` | Delete the current `HEAD` reference ⚠️ |
 
-### Docker – Basic
+> **⚠️ Caution:** `greset` is destructive and should only be used when you understand its effect. 
 
-| Alias | Description |
-|-------|-------------|
+---
+
+# 🐳 Docker
+
+## Basic Docker Commands
+
+| Alias | Purpose |
+|---|---|
 | `d-ps` | List running containers |
 | `d-psa` | List all containers |
 | `d-images` | List all images |
 | `d-logs` | Follow container logs |
-| `d-logs-n` | Follow last 100 lines |
-| `d-top` | Live resource stats |
-| `d-port` | List port mappings |
+| `d-logs-n` | Follow the last 100 log lines |
+| `d-top` | Show live resource usage |
+| `d-port` | Show container port mappings |
 
-### Docker – Cleanup
 
-| Alias | Description |
-|-------|-------------|
-| `d-prune` | Remove ALL unused data ⚠️ |
-| `d-prune-containers` | Remove stopped containers |
-| `d-prune-images` | Remove unused images |
-| `d-prune-volumes` | Remove unused volumes |
-| `d-prune-networks` | Remove unused networks |
+## Docker Cleanup
 
-### Docker Compose – Basic
+| Alias | Purpose | Risk |
+|---|---|---|
+| `d-prune` | Remove all unused Docker data | ⚠️ High |
+| `d-prune-containers` | Remove stopped containers | Medium |
+| `d-prune-images` | Remove unused images | Medium |
+| `d-prune-volumes` | Remove unused volumes | ⚠️ High |
+| `d-prune-networks` | Remove unused networks | Low |
 
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `dc-u` | `docker compose up -d` | Start in background |
-| `dc-ub` | `docker compose up -d --build` | Build and start |
-| `dc-d` | `docker compose down` | Stop and remove |
-| `dc-dv` | `docker compose down -v` | Stop + remove volumes |
-| `dc-do` | `docker compose down -v --remove-orphans` | Full cleanup |
-| `dc-l` | `docker compose logs -f` | Follow logs |
-| `dc-ps` | `docker compose ps` | List with status |
-| `dc-e` | `docker compose exec` | Exec into container |
+The original collection marks `d-prune` as a destructive cleanup command. 
 
-### Docker Compose – Advanced
+---
 
-| Alias | Description |
-|-------|-------------|
+# 🐙 Docker Compose
+
+## Common Commands
+
+| Alias | Command | Purpose |
+|---|---|---|
+| `dc-u` | `docker compose up -d` | Start services in the background |
+| `dc-ub` | `docker compose up -d --build` | Build and start services |
+| `dc-d` | `docker compose down` | Stop and remove containers |
+| `dc-dv` | `docker compose down -v` | Stop containers and remove volumes |
+| `dc-do` | `docker compose down -v --remove-orphans` | Full Compose cleanup |
+| `dc-l` | `docker compose logs -f` | Follow service logs |
+| `dc-ps` | `docker compose ps` | Show service status |
+| `dc-e` | `docker compose exec` | Execute a command inside a service |
+
+
+## Advanced Commands
+
+| Alias | Purpose |
+|---|---|
 | `dc-dbu` | Clean rebuild |
-| `dc-db` | Complete reset |
-| `dc-upd` | Force recreate containers |
+| `dc-db` | Complete environment reset |
+| `dc-upd` | Force container recreation |
 | `dc-b` | Build without cache |
 | `dc-bup` | Build without cache and start |
-| `dc-down-all` | Remove everything including images ⚠️ |
+| `dc-down-all` | Remove everything, including images ⚠️ |
 
-### Laravel – Core
 
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `a` | `php artisan` | Artisan shorthand |
-| `crd` | `composer run dev` | Run composer dev |
-| `ln` | `laravel new` | Create new project |
+---
 
-### Laravel – Make Commands
+# 🎯 Laravel
+
+## Core Shortcuts
+
+| Alias | Command | Purpose |
+|---|---|---|
+| `a` | `php artisan` | Short form of Artisan |
+| `crd` | `composer run dev` | Start the Composer development script |
+| `ln` | `laravel new` | Create a new Laravel project |
+
+
+## Make / Generate Commands
 
 | Alias | Creates |
-|-------|---------|
+|---|---|
 | `mctl` | Controller |
 | `mmg` | Migration |
 | `mmo` | Model |
@@ -131,54 +174,63 @@ A comprehensive collection of shell aliases and helper functions for **Docker**,
 | `mp` | Policy |
 | `mt` | Test |
 
-### Laravel – Migrations
 
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `mg` | `migrate` | Run migrations |
-| `mgf` | `migrate:fresh` | Drop all and re-migrate |
-| `mgr` | `migrate:refresh` | Rollback and re-migrate |
-| `mgb` | `migrate:rollback` | Rollback last batch |
-| `mgs` | `migrate:status` | Show status |
+## Database Migrations
 
-### Laravel – Queue
+| Alias | Command | Purpose |
+|---|---|---|
+| `mg` | `migrate` | Run pending migrations |
+| `mgf` | `migrate:fresh` | Drop all tables and recreate them |
+| `mgr` | `migrate:refresh` | Roll back and re-run migrations |
+| `mgb` | `migrate:rollback` | Roll back the latest migration batch |
+| `mgs` | `migrate:status` | Show migration status |
 
-| Alias | Command | Description |
-|-------|---------|-------------|
-| `qw` | `queue:work` | Start worker |
-| `ql` | `queue:listen` | Listen to queue |
+
+## Queue Management
+
+| Alias | Command | Purpose |
+|---|---|---|
+| `qw` | `queue:work` | Start a queue worker |
+| `ql` | `queue:listen` | Listen for queued jobs |
 | `qf` | `queue:failed` | List failed jobs |
-| `qrt` | `queue:retry` | Retry failed job |
-| `qr` | `queue:restart` | Restart workers |
+| `qrt` | `queue:retry` | Retry a failed job |
+| `qr` | `queue:restart` | Restart queue workers |
 
-### Livewire
+
+---
+
+# ⚡ Livewire
 
 | Alias | Creates |
-|-------|---------|
+|---|---|
 | `mlw` | Livewire component |
 | `mlwp` | Livewire page component |
 | `lwf` | Livewire form |
 | `lwl` | Livewire layout |
 
-## Helper Functions
 
-### Docker
+---
+
+# 🛠️ Helper Functions
+
+## Docker Helpers
 
 ```bash
-# Safe cleanup (preserves volumes)
+# Safely clean unused Docker resources while preserving volumes
 docker-clean-safe
 
-# Print resource overview
+# Display a Docker resource overview
 docker-summary
 
-# Open shell in container
+# Open a shell inside a container
 docker-shell <container> [shell]
 
-# Follow logs with timestamps
+# Follow container logs with timestamps
 docker-logs-with-time <container> [lines]
 ```
 
-### Docker Compose Services
+
+## Docker Compose Service Helpers
 
 ```bash
 # Rebuild and start a service
@@ -187,121 +239,159 @@ dc-service-up <service>
 # Restart a service
 dc-service-re <service>
 
-# Follow service logs
+# Follow logs for a service
 dc-service-logs <service> [lines]
 
-# Shell into a service
+# Open a shell inside a service
 dc-service-shell <service> [shell]
 ```
 
-### Git Archive
+
+## Git Archive Helpers
 
 ```bash
-# Create archive in current directory
+# Create an archive in the current directory
 garc <ProjectName> [path...]
 
-# Create archive to OneDrive folder
+# Create an archive in the configured OneDrive folder
 gar_one <ProjectName> [path...]
 
-# Set output directory and create archive
+# Create an archive in a specific output directory
 gout <outdir> <ProjectName> [path...]
 ```
 
-### Laravel IDE
+
+## Laravel IDE Helpers
 
 ```bash
-# Quick regenerate IDE helpers
+# Quickly regenerate IDE helper files
 ideu
 
-# Full IDE helper update with status
+# Run the full IDE helper update with status output
 ide-update
 ```
 
-## Usage Examples
 
-### Docker Compose Workflow
+---
+
+# 📚 Usage Examples
+
+## Docker Compose Workflow
 
 ```bash
 # Build and start all services
 dc-ub
 
-# Follow logs for app service
+# Follow application logs
 dc-l app
 
-# Shell into database container
+# Open a shell in the database container
 dc-e db bash
 
-# Complete reset and rebuild
+# Completely reset and rebuild the environment
 dc-db
 ```
 
-### Laravel Development
+
+## Laravel Development
 
 ```bash
-# Create a new controller
+# Create a controller
 mctl UserController
 
 # Run migrations
 mg
 
-# Start queue worker
+# Start a queue worker
 qw
 
 # List routes
 rl
 ```
 
-### Git Archive
+
+## Project Archives
 
 ```bash
-# Archive current project
+# Archive the current project
 garc MyApp
 
 # Archive to OneDrive
 gar_one MyApp
 
-# Archive to specific directory
+# Archive to a specific directory
 gout ~/backups MyApp
 ```
 
-## Customization
 
-### OneDrive Path
+---
 
-The `gar_one` function uses a hardcoded OneDrive path. Modify it to match your setup:
+# ⚙️ Customization
+
+## Configure OneDrive
+
+The `gar_one` helper uses a hard-coded OneDrive location. Update it to match your environment:
 
 ```bash
 local out_dir="/mnt/c/Users/YOUR_USERNAME/OneDrive - YOUR_ORG/wsl_project"
 ```
 
-### Adding New Aliases
 
-Add your custom aliases at the end of the file:
+## Add Your Own Aliases
+
+Add custom aliases to the end of the file:
 
 ```bash
 # ============================================
 # CUSTOM ALIASES
 # ============================================
+
 alias myalias='my command'
 ```
 
-## Safety Notes
 
-⚠️ **Destructive commands** – Use with caution:
+---
 
-- `d-prune` – Removes ALL unused Docker data including volumes
-- `dc-down-all` – Removes containers, images, volumes, and orphans
-- `greset` – Deletes HEAD ref
-- `dbw` – Drops all database tables
+# ⚠️ Safety Notes
 
-## Requirements
+Some commands can permanently remove data or change repository state. Use them carefully.
 
-- Bash 4.0+
-- Docker & Docker Compose
-- PHP & Composer (for Laravel aliases)
-- Git
-- Node.js & npm (for frontend aliases)
+| Command | Action | Risk |
+|---|---|---|
+| `d-prune` | Removes all unused Docker data, including volumes | 🔴 High |
+| `dc-down-all` | Removes containers, images, volumes, and orphaned resources | 🔴 High |
+| `greset` | Deletes the current `HEAD` reference | 🔴 High |
+| `dbw` | Drops all database tables | 🔴 High |
 
-## License
+These destructive commands are explicitly identified in the original README. 
 
-MIT License – Free to use and modify.
+> **Best practice:** Read the command definition before running any destructive alias in a production or important development environment.
+
+---
+
+# ✅ Requirements
+
+Make sure the following are installed:
+
+- **Bash 4.0+**
+- **Docker**
+- **Docker Compose**
+- **PHP**
+- **Composer**
+- **Git**
+- **Node.js**
+- **npm**
+
+These are the dependencies documented by the original project. 
+
+---
+
+# 📄 License
+
+**MIT License** — Free to use, modify, and distribute according to the terms of the license. 
+
+---
+
+## 💡 Tip
+
+Keep aliases short and memorable, but avoid aliases that hide destructive commands. For team environments, prefer aliases that are easy for another developer to understand without needing to inspect the Bash file.
