@@ -1,3 +1,4 @@
+cat > ~/.bash_aliases <<'EOF'
 # Cleaned `.bash_aliases`
 
 # Copy **everything** inside the code block below into `~/.bash_aliases` (replace the whole file).
@@ -490,3 +491,4 @@ ide-update() {
 # END OF ALIASES
 # ============================================
 
+EOF
