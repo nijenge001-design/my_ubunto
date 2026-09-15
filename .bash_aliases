@@ -23,6 +23,7 @@ alias myip='hostname -I'
 alias ports='netstat -tulnp'
 alias all-apps='apt-mark showmanual'
 alias p2kill='sudo ss -tulpn | grep'
+alias fphp='/usr/bin/frankenphp php-cli'
 
 # ============================================
 # GIT
