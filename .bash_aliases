@@ -20,6 +20,7 @@ alias l='ls -CF'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias myip='hostname -I'
+alias os-v='lsb_release -a' #To find out which Ubuntu version is running
 alias ports='netstat -tulnp'
 alias all-apps='apt-mark showmanual'
 alias p2kill='sudo ss -tulpn | grep'
