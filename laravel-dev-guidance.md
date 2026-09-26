@@ -392,3 +392,88 @@ In this case, follow §5's native install commands **inside the WSL2 Ubuntu dist
 
 - Don't run Docker Desktop on the legacy Hyper-V backend if WSL2 is available — WSL2 is faster and is Docker Desktop's current default.
 - Don't split the toolchain across both sides — e.g., project files on `C:\`, with some services in WSL2 and others running natively on Windows. Pick one environment (WSL2, for either Docker or native) and keep the entire toolchain — editor, terminal, git, code checkout — inside it.
+
+---
+
+## Appendix B — Docker Desktop Kubernetes: One Shared Context for Host, WSL2, and Containers
+
+Some teams also use Docker Desktop's built-in single-node Kubernetes cluster to rehearse manifests, Helm charts, or ingress rules destined for a real cluster later — without every developer separately installing and maintaining `minikube`/`kind` on top of what Docker Desktop already provides. This doesn't replace anything in §4 (the Laravel stack there doesn't run on Kubernetes), it's an addition for teams that need it. Goal: `kubectl` on the Windows host, `kubectl` inside a WSL2 terminal, and `kubectl` running inside a container all point at the **exact same cluster**, not three independent copies of a kubeconfig that can drift apart.
+
+### 1. Enable Kubernetes in Docker Desktop
+
+Settings → **Kubernetes** tab → toggle **Enable Kubernetes** → Apply & Restart. On Docker Desktop 4.38+ you'll be asked to choose a provisioning method (**kubeadm** or **kind**) if signed in — either works for local dev. This provisions a single-node cluster inside Docker Desktop's own VM and writes (or merges) a `docker-desktop` context into the Windows-side kubeconfig at `C:\Users\<you>\.kube\config`.
+
+### 2. Confirm on the host
+
+```powershell
+kubectl config get-contexts
+kubectl config use-context docker-desktop
+kubectl get nodes
+```
+
+If `get-contexts` comes back empty, run it from an actual CMD/PowerShell window rather than another shell, or set `KUBECONFIG` explicitly to the path above.
+
+### 3. Share that same context into WSL2
+
+Docker Desktop's WSL integration shares the Docker **engine** into your enabled distros automatically, but the kubeconfig file itself isn't guaranteed to be mirrored into every distro depending on your Docker Desktop version. The reliable fix is to have WSL2 read the *same file* the host uses, rather than maintaining two copies that can silently diverge:
+
+```bash
+mkdir -p ~/.kube
+ln -sf /mnt/c/Users/<you>/.kube/config ~/.kube/config
+```
+
+or, equivalently, without a symlink:
+
+```bash
+echo 'export KUBECONFIG=/mnt/c/Users/<you>/.kube/config' >> ~/.bashrc && source ~/.bashrc
+```
+
+Then, from the same WSL2 terminal you're already using for the Laravel project (Appendix A):
+
+```bash
+kubectl config use-context docker-desktop
+kubectl get nodes    # same single node the host saw in step 2
+```
+
+### 4. Reach the same cluster from inside a container
+
+This is the part that needs distinct handling: `127.0.0.1`/`localhost` inside a container refers to the container itself, never the host running Docker Desktop's Kubernetes API server.
+
+- Docker Desktop exposes the host to containers via the built-in DNS name **`host.docker.internal`**, which resolves correctly out of the box on Docker Desktop for Windows/Mac. (If you ever do this on a native Linux Docker host instead of Docker Desktop, add `--add-host=host.docker.internal:host-gateway`, or the equivalent Compose `extra_hosts` entry, to get the same resolution there.)
+- Don't edit the live kubeconfig in place — Docker Desktop regenerates it. Keep a **separate, container-only copy** checked into the project instead (e.g. `docker/kube/config-for-containers.yaml`), with its `server:` field changed to `https://host.docker.internal:6443`, and mount that copy read-only:
+
+```yaml
+# docker-compose.yml snippet
+services:
+  kubectl-toolbox:
+    image: bitnami/kubectl:latest
+    volumes:
+      - ./docker/kube/config-for-containers.yaml:/root/.kube/config:ro
+    entrypoint: ["kubectl"]
+```
+
+- Certificate validation can still fail even once the network path is right, if the API server's TLS certificate wasn't issued with `host.docker.internal` as a valid name. Check what the certificate actually covers before assuming it will fail:
+
+```bash
+kubectl config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | base64 -d > ca.crt
+openssl x509 -in ca.crt -noout -text | grep -A1 "Subject Alternative Name"
+```
+
+If `host.docker.internal` isn't listed, the practical dev-only fallback is `insecure-skip-tls-verify: true` on that **container-only** kubeconfig copy specifically. Never set this on the host or WSL2 copies, and never use it for anything beyond this single-node local cluster.
+
+### 5. Verify all three actually agree
+
+```bash
+# Host (PowerShell)
+kubectl config current-context   # docker-desktop
+kubectl get nodes
+
+# WSL2
+kubectl config current-context   # docker-desktop
+kubectl get nodes                # same node name/age as the host
+
+# Container
+docker compose run --rm kubectl-toolbox get nodes   # same node again, reached via host.docker.internal
+```
+
+If all three report the same node name and age, the host, WSL2, and the container are genuinely talking to one cluster — not three independent ones that happen to look similar.
