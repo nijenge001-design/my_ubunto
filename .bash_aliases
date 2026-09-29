@@ -1,13 +1,7 @@
 cat > ~/.bash_aliases <<'EOF'
-# Cleaned `.bash_aliases`
-
-# Copy **everything** inside the code block below into `~/.bash_aliases` (replace the whole file).
-
-
 #!/bin/bash
 # Docker, Laravel & Dev Aliases
 # source ~/.bashrc  (or source this file)
-# ============================================
 
 # ============================================
 # GENERAL / SHELL
@@ -20,7 +14,7 @@ alias l='ls -CF'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias myip='hostname -I'
-alias os-v='lsb_release -a' #To find out which Ubuntu version is running
+alias os-v='lsb_release -a'          # Ubuntu version
 alias ports='netstat -tulnp'
 alias all-apps='apt-mark showmanual'
 alias p2kill='sudo ss -tulpn | grep'
@@ -46,24 +40,24 @@ alias build='npm run build'
 # ============================================
 # DOCKER – BASIC
 # ============================================
-alias d-ps='docker ps'                                   # List running containers
-alias d-psa='docker ps -a'                               # List all containers
-alias d-images='docker images'                           # List all images
-alias d-inspect='docker inspect'                         # Show detailed container info
-alias d-logs='docker logs -f'                            # Follow container logs
-alias d-logs-n='docker logs -f --tail=100'               # Follow last 100 lines
-alias d-history='docker history'                         # Show image history
-alias d-port='docker port'                               # List port mappings
+alias d-ps='docker ps'
+alias d-psa='docker ps -a'
+alias d-images='docker images'
+alias d-inspect='docker inspect'
+alias d-logs='docker logs -f'
+alias d-logs-n='docker logs -f --tail=100'
+alias d-history='docker history'
+alias d-port='docker port'
 alias d-top='docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"'
 
 # ============================================
 # DOCKER – PRUNE / CLEANUP
 # ============================================
-alias d-prune='docker system prune -af --volumes'        # Remove all unused data (CAUTION!)
-alias d-prune-containers='docker container prune -f'     # Remove stopped containers
-alias d-prune-images='docker image prune -af'            # Remove unused images
-alias d-prune-volumes='docker volume prune -f'           # Remove unused volumes
-alias d-prune-networks='docker network prune -f'         # Remove unused networks
+alias d-prune='docker system prune -af --volumes'   # CAUTION: removes everything unused
+alias d-prune-containers='docker container prune -f'
+alias d-prune-images='docker image prune -af'
+alias d-prune-volumes='docker volume prune -f'
+alias d-prune-networks='docker network prune -f'
 
 # ============================================
 # DOCKER – NETWORKS
@@ -84,30 +78,30 @@ alias dv-create='docker volume create'
 # ============================================
 # DOCKER COMPOSE – BASIC
 # ============================================
-alias dc-u='docker compose up -d'                        # Start containers in background
-alias dc-ub='docker compose up -d --build'               # Build and start containers
-alias dc-d='docker compose down'                         # Stop and remove containers
-alias dc-dv='docker compose down -v'                     # Stop + remove containers & volumes
-alias dc-do='docker compose down -v --remove-orphans'    # Full cleanup (containers, volumes, orphans)
-alias dc-re='docker compose restart'                     # Restart all containers
-alias dc-l='docker compose logs -f'                      # Follow logs from all containers
-alias dc-l100='docker compose logs -f --tail=100'        # Follow last 100 lines of logs
-alias dc-e='docker compose exec'                         # Execute command in running container
-alias dc-ps='docker compose ps'                          # List containers with status
-alias dc-stop='docker compose stop'                      # Stop containers without removing
-alias dc-start='docker compose start'                    # Start stopped containers
-alias dc-pull='docker compose pull'                      # Pull latest images
-alias dc-config='docker compose config'                  # Validate and view compose file
+alias dc-u='docker compose up -d'
+alias dc-ub='docker compose up -d --build'
+alias dc-d='docker compose down'
+alias dc-dv='docker compose down -v'
+alias dc-do='docker compose down -v --remove-orphans'
+alias dc-re='docker compose restart'
+alias dc-l='docker compose logs -f'
+alias dc-l100='docker compose logs -f --tail=100'
+alias dc-e='docker compose exec'
+alias dc-ps='docker compose ps'
+alias dc-stop='docker compose stop'
+alias dc-start='docker compose start'
+alias dc-pull='docker compose pull'
+alias dc-config='docker compose config'
 
 # ============================================
 # DOCKER COMPOSE – COMBINED / ADVANCED
 # ============================================
-alias dc-dbu='docker compose down -v && docker compose up -d --build'                    # Clean rebuild
-alias dc-db='docker compose down -v --remove-orphans && docker compose up -d --build'   # Complete reset
-alias dc-upd='docker compose up -d --force-recreate'                                     # Force recreate containers
-alias dc-b='docker compose build --no-cache'                                             # Build without cache
-alias dc-bup='docker compose build --no-cache && docker compose up -d'                   # Build without cache and start
-alias dc-down-all='docker compose down --rmi all -v --remove-orphans'                    # Remove everything (including images)
+alias dc-dbu='docker compose down -v && docker compose up -d --build'
+alias dc-db='docker compose down -v --remove-orphans && docker compose up -d --build'
+alias dc-upd='docker compose up -d --force-recreate'
+alias dc-b='docker compose build --no-cache'
+alias dc-bup='docker compose build --no-cache && docker compose up -d'
+alias dc-down-all='docker compose down --rmi all -v --remove-orphans'
 
 # ============================================
 # LARAVEL – CORE
@@ -305,50 +299,52 @@ docker-logs-with-time() {
     docker logs -f --tail="$lines" -t "$1"
 }
 
-mkdb() {
-  # usage:
-  #   mkdb myapp
-  #   mkdb myapp myuser
-  #   mkdb myapp myuser mypass
-  local db="$1"
-  local user="${2:-$1}"
-  local pass="${3:-$user}"
+# Create MySQL database + user inside the 'mysql' container
+# Usage:
+#   dc-mkdb myapp
+#   dc-mkdb myapp myuser
+#   dc-mkdb myapp myuser mypass
+dc-mkdb() {
+    local db="$1"
+    local user="${2:-$1}"
+    local pass="${3:-$user}"
 
-  if [ -z "$db" ]; then
-    echo "usage: mkdb <database> [username] [password]" >&2
-    echo "  mkdb myapp                 → db/user/pass = myapp" >&2
-    echo "  mkdb myapp appuser         → db=myapp user/pass=appuser" >&2
-    echo "  mkdb myapp appuser secret  → db=myapp user=appuser pass=secret" >&2
-    return 1
-  fi
+    if [ -z "$db" ]; then
+        echo "usage: dc-mkdb <database> [username] [password]" >&2
+        echo "  dc-mkdb myapp                 → db/user/pass = myapp" >&2
+        echo "  dc-mkdb myapp appuser         → db=myapp user/pass=appuser" >&2
+        echo "  dc-mkdb myapp appuser secret  → db=myapp user=appuser pass=secret" >&2
+        return 1
+    fi
 
-  if ! docker inspect mysql >/dev/null 2>&1; then
-    echo "error: docker container 'mysql' not found" >&2
-    return 1
-  fi
+    if ! docker inspect mysql >/dev/null 2>&1; then
+        echo "error: docker container 'mysql' not found" >&2
+        return 1
+    fi
 
-  if ! docker exec mysql mysqladmin ping -uroot -p"${MYSQL_ROOT_PASSWORD:-root}" --silent >/dev/null 2>&1; then
-    echo "error: cannot connect to MySQL in container 'mysql' (check MYSQL_ROOT_PASSWORD)" >&2
-    return 1
-  fi
+    if ! docker exec mysql mysqladmin ping -uroot -p"${MYSQL_ROOT_PASSWORD:-root}" --silent >/dev/null 2>&1; then
+        echo "error: cannot connect to MySQL in container 'mysql' (check MYSQL_ROOT_PASSWORD)" >&2
+        return 1
+    fi
 
-  if ! docker exec -i mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-root}" -e \
-    "CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-     CREATE USER IF NOT EXISTS '${user}'@'%' IDENTIFIED BY '${pass}';
-     GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${user}'@'%';
-     FLUSH PRIVILEGES;"; then
-    echo "error: failed to create database/user '${db}'" >&2
-    return 1
-  fi
+    if ! docker exec -i mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-root}" -e \
+        "CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+         CREATE USER IF NOT EXISTS '${user}'@'%' IDENTIFIED BY '${pass}';
+         GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${user}'@'%';
+         FLUSH PRIVILEGES;"; then
+        echo "error: failed to create database/user '${db}'" >&2
+        return 1
+    fi
 
-  echo "created db=${db} user=${user}"
+    echo "created db=${db} user=${user}"
 }
+
 # ===== Git archive helpers =====
 
 # Create a git archive zip for a project
 # Usage: garc <ProjectName> [path...]
-# Default: current dir. Override with GARC_OUT env var (e.g. Windows path via WSL)
-# Creates the output directory if it does not exist.
+# Default output: ./<ProjectName>.zip
+# Override folder with GARC_OUT env var.
 garc() {
     local project="${1:?Usage: garc <ProjectName> [path...]}"
     shift
@@ -362,33 +358,26 @@ garc() {
 
 # Create a git archive zip to OneDrive wsl_project folder
 # Usage: gar_one <ProjectName> [path...]
-# Creates the output directory if it does not exist.
 gar_one() {
     local project="${1:?Usage: gar_one <ProjectName> [path...]}"
     shift
-
     local out_dir="/mnt/c/Users/SGL/OneDrive - Contoso/wsl_project"
     local out="${out_dir%/}/${project}.zip"
-
-    # Create the complete parent directory structure
     mkdir -p "$(dirname "$out")" || {
         echo "Failed to create output directory:"
         echo "  $(dirname "$out")"
         return 1
     }
-
     git archive -o "$out" HEAD "$@" || {
         echo "git archive failed"
         return 1
     }
-
     echo "Created: $out"
     ls -lh "$out"
 }
 
 # Shortcut: set output dir then run garc
 # Usage: gout <outdir> <ProjectName> [path...]
-# Creates <outdir> if it does not exist.
 gout() {
     local out_dir="${1:?Usage: gout <outdir> <ProjectName> [path...]}"
     shift
@@ -400,31 +389,23 @@ gout() {
 # ============================================
 alias ideu='rm -rf vendor/_laravel_idea && composer dump-autoload'
 
-# ============================================
-# LARAVEL – IDE / LARAVEL IDEA
-# ============================================
 ide-update() {
     echo "=== Updating Laravel Idea helper code ==="
-
     if [ ! -f "composer.json" ]; then
         echo "Error: composer.json not found."
         echo "Run this command from a Laravel project directory."
         return 1
     fi
-
     echo "Removing Laravel Idea generated helpers..."
     rm -rf vendor/_laravel_idea
-
     echo "Regenerating Composer autoload..."
     composer dump-autoload
-
     echo "Laravel Idea helper directory:"
     if [ -d "vendor/_laravel_idea" ]; then
         echo "  vendor/_laravel_idea exists"
     else
         echo "  vendor/_laravel_idea will be regenerated by PhpStorm."
     fi
-
     echo "Done."
 }
 
@@ -432,100 +413,189 @@ ide-update() {
 # USAGE EXAMPLES (COMMENTED)
 # ============================================
 #
-# === BASIC DOCKER COMPOSE ===
-# dc-ub                    # Build and start all services
-# dc-db                    # Complete reset (clean and rebuild)
-# dc-l app                 # Follow logs for 'app' service
-# dc-e db bash             # Get shell inside 'db' container
-# d-top                    # Monitor resource usage
-# d-prune                  # Aggressive cleanup (removes everything)
-# dc-down-all              # Remove compose project completely
+# ── GENERAL / SHELL ──────────────────────────────────────────────
+# sb                          # reload ~/.bashrc
+# cls                         # clear screen
+# ll                          # long list with hidden files
+# la / l                      # list almost-all / column format
+# ..  / ...                   # go up 1 / 2 directories
+# myip                        # show local IPs
+# os-v                        # show Ubuntu version
+# ports                       # show listening ports
+# all-apps                    # list manually installed packages
+# p2kill :8080                # find process listening on port
+# fphp artisan ...            # run PHP via FrankenPHP
 #
-# === HELPER FUNCTIONS ===
+# ── GIT ──────────────────────────────────────────────────────────
+# gs                          # git status
+# ga                          # git add .
+# gc "message"                # git commit -m "message"
+# gp / gl                     # push / pull
+# greset1                     # soft reset last commit (keeps staged)
+# greset                      # delete HEAD ref (DANGEROUS)
+#
+# ── NODE / FRONTEND ──────────────────────────────────────────────
+# dev                         # npm run dev
+# build                       # npm run build
+#
+# ── DOCKER BASIC ─────────────────────────────────────────────────
+# d-ps / d-psa                # running / all containers
+# d-images                    # list images
+# d-inspect <container>       # detailed info
+# d-logs <container>          # follow logs
+# d-logs-n <container>        # follow last 100 lines
+# d-history <image>           # image layers
+# d-port <container>          # port mappings
+# d-top                       # live CPU / mem / net table
+#
+# ── DOCKER PRUNE ─────────────────────────────────────────────────
+# d-prune                     # full aggressive cleanup (CAUTION)
+# d-prune-containers          # only stopped containers
+# d-prune-images              # unused images
+# d-prune-volumes             # unused volumes
+# d-prune-networks            # unused networks
+#
+# ── DOCKER NETWORKS / VOLUMES ────────────────────────────────────
+# dn-ls / dn-inspect <net> / dn-create <name> / dn-prune
+# dv-ls / dv-inspect <vol> / dv-create <name> / dv-prune
+#
+# ── DOCKER COMPOSE BASIC ─────────────────────────────────────────
+# dc-u                        # up -d
+# dc-ub                       # up -d --build
+# dc-d                        # down
+# dc-dv                       # down -v
+# dc-do                       # down -v --remove-orphans
+# dc-re                       # restart
+# dc-l                        # logs -f (all)
+# dc-l100                     # logs -f --tail=100
+# dc-e <service> bash         # exec into service
+# dc-ps                       # compose ps
+# dc-stop / dc-start          # stop / start without removing
+# dc-pull                     # pull latest images
+# dc-config                   # validate compose file
+#
+# ── DOCKER COMPOSE ADVANCED ──────────────────────────────────────
+# dc-dbu                      # down -v && up -d --build
+# dc-db                       # full clean + rebuild (recommended)
+# dc-upd                      # force-recreate
+# dc-b                        # build --no-cache
+# dc-bup                      # no-cache build + up -d
+# dc-down-all                 # remove containers, volumes, images, orphans
+#
+# ── LARAVEL CORE ─────────────────────────────────────────────────
+# a <cmd>                     # php artisan <cmd>
+# crd                         # composer run dev
+# pad                         # php artisan dev
+# ln myapp                    # laravel new myapp
+#
+# ── ROUTES / STORAGE / STUBS / SAIL ──────────────────────────────
+# rc / rcl / rl               # route:cache / clear / list
+# sl / sul                    # storage:link / unlink
+# sp                          # stub:publish
+# sa / si / spub              # sail:add / install / publish
+#
+# ── QUEUE ────────────────────────────────────────────────────────
+# qc / qf / qfl / qfg         # clear / failed / flush / forget
+# ql / qm / qw                # listen / monitor / work
+# qpb / qpf                   # prune-batches / prune-failed
+# qr / qrt / qrb              # restart / retry / retry-batch
+#
+# ── MAKE (m*) ────────────────────────────────────────────────────
+# mc / mcmd / mcmp / mctl     # class / command / component / controller
+# men / mev / mf / mi / mj    # enum / event / factory / interface / job
+# ml / mm / mmw / mmg / mmo   # listener / mail / middleware / migration / model
+# mnt / mntt / mob / mp       # notification / notifications-table / observer / policy
+# mpr / mqb / mqf / mqt       # provider / queue-batches / queue-failed / queue-table
+# mr / mrs / mrule / msc      # request / resource / rule / scope
+# msd / mst / mt / mtr / mv   # seeder / session-table / test / trait / view
+#
+# ── MIGRATIONS (mg*) ─────────────────────────────────────────────
+# mg / mgf / mgi / mgr        # migrate / fresh / install / refresh
+# mgreset / mgb / mgs         # reset / rollback / status
+#
+# ── DATABASE (db*) ───────────────────────────────────────────────
+# dbm / dbs / dbsh / dbt / dbw   # monitor / seed / show / table / wipe
+#
+# ── LIVEWIRE ─────────────────────────────────────────────────────
+# lwa / lwc / lwcv / lwf      # attribute / config / convert / form
+# lwl / lws                   # layout / stubs
+# mlw <name>                  # make:livewire
+# mlwp Dashboard              # make:livewire pages::Dashboard
+# pstress                     # ./vendor/bin/pest stress
+#
+# ── HELPER FUNCTIONS ─────────────────────────────────────────────
 #
 # docker-clean-safe
-#   Safe cleanup: removes stopped containers, unused images & networks.
-#   Volumes are preserved.
+#   Safe cleanup (containers + images + networks). Volumes kept.
 #   Example:  docker-clean-safe
 #
 # docker-summary
-#   Print overview of containers, images, volumes and networks.
+#   Pretty overview of containers, images, volumes, networks.
 #   Example:  docker-summary
 #
 # docker-shell <container> [shell]
-#   Open an interactive shell inside a running container.
-#   Default shell: /bin/bash
+#   Interactive shell inside a running container.
 #   Examples:
 #     docker-shell app
 #     docker-shell app /bin/sh
 #     docker-shell db bash
 #
 # dc-service-up <service>
-#   Rebuild and start a single Compose service.
+#   Rebuild + start a single Compose service.
 #   Example:  dc-service-up nginx
-#             dc-service-up app
 #
 # dc-service-re <service>
 #   Restart a single Compose service.
-#   Example:  dc-service-re db
-#             dc-service-re redis
+#   Example:  dc-service-re redis
 #
 # dc-service-logs <service> [lines]
-#   Follow logs for a specific service (default last 50 lines).
+#   Follow logs for one service (default 50 lines).
 #   Examples:
 #     dc-service-logs app
-#     dc-service-logs db 100
-#     dc-service-logs nginx 200
+#     dc-service-logs db 200
 #
 # dc-service-shell <service> [shell]
-#   Open a shell inside a Compose service container.
-#   Default shell: /bin/bash
+#   Shell inside a Compose service.
 #   Examples:
 #     dc-service-shell app
 #     dc-service-shell app sh
-#     dc-service-shell db bash
 #
 # docker-logs-with-time <container> [lines]
-#   Follow container logs with timestamps (default last 50 lines).
+#   Follow container logs with timestamps.
 #   Examples:
-#     docker-logs-with-time app
-#     docker-logs-with-time nginx 100
-#     docker-logs-with-time db 200
+#     docker-logs-with-time nginx
+#     docker-logs-with-time app 100
+#
+# dc-mkdb <database> [user] [pass]
+#   Create database + user inside the 'mysql' container.
+#   Examples:
+#     dc-mkdb myapp
+#     dc-mkdb myapp appuser
+#     dc-mkdb myapp appuser secret
 #
 # garc <ProjectName> [path...]
-#   Create a git archive zip of the current HEAD.
-#   Default output: ./<ProjectName>.zip
-#   Override folder with GARC_OUT env var.
-#   Creates the output directory if it does not exist.
+#   Git archive → zip (default ./ProjectName.zip).
+#   Override folder with GARC_OUT.
 #   Examples:
 #     garc MyApp
 #     garc AliasOnly alias
-#     GARC_OUT=/mnt/c/Users/YourName/Desktop garc MyApp
-#     GARC_OUT=/mnt/d/Backups garc MyApp
+#     GARC_OUT=/mnt/c/Users/You/Desktop garc MyApp
 #
 # gout <outdir> <ProjectName> [path...]
-#   Set output dir and run garc (creates outdir if missing).
+#   Set output dir then run garc.
 #   Examples:
-#     gout ../2026/09 091200AttendancePUSHCommunication
-#     gout ~/jenge MyApp
+#     gout ../backups MyApp
 #     gout /mnt/d/Backups MyApp
 #
 # gar_one <ProjectName> [path...]
-#   Create a git archive zip to OneDrive wsl_project folder.
-#   Output: /mnt/c/Users/SGL/OneDrive - Contoso/wsl_project/<ProjectName>.zip
-#   Creates the folder if it does not exist.
+#   Git archive straight to OneDrive wsl_project folder.
 #   Examples:
 #     gar_one MyApp
 #     gar_one AttendancePUSHCommunication
-#     gar_one AliasOnly alias
 #
-# greset1
-#   Soft reset last commit (keeps changes staged)
-#   Example:  greset1
-#
-# greset
-#   Delete HEAD ref (use with caution)
-#   Example:  greset
+# ideu / ide-update
+#   Remove Laravel Idea helpers and regenerate Composer autoload.
+#   Run from project root.
 #
 # ============================================
 # END OF ALIASES
