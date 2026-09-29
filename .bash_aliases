@@ -305,38 +305,56 @@ docker-logs-with-time() {
 #   dc-mkdb myapp myuser
 #   dc-mkdb myapp myuser mypass
 dc-mkdb() {
-    local db="$1"
-    local user="${2:-$1}"
-    local pass="${3:-$user}"
+  # usage: dc-mkdb <database> [username] [password]
+  # runs against ~/docker/shared-services from any directory
+  local project="${DC_SHARED_SERVICES:-$HOME/docker/shared-services}"
+  local db="$1" user="${2:-$1}" pass="${3:-$user}" service="${4:-mysql}"
 
-    if [ -z "$db" ]; then
-        echo "usage: dc-mkdb <database> [username] [password]" >&2
-        echo "  dc-mkdb myapp                 → db/user/pass = myapp" >&2
-        echo "  dc-mkdb myapp appuser         → db=myapp user/pass=appuser" >&2
-        echo "  dc-mkdb myapp appuser secret  → db=myapp user=appuser pass=secret" >&2
-        return 1
+  if [ -z "$db" ]; then
+    echo "usage: dc-mkdb <database> [username] [password] [service]" >&2
+    echo "  project: $project" >&2
+    return 1
+  fi
+
+  (
+    cd "$project" || { echo "error: project not found: $project" >&2; exit 1; }
+
+    local root_pass="${MYSQL_ROOT_PASSWORD:-}"
+    if [ -z "$root_pass" ] && [ -f .env ]; then
+      root_pass="$(
+        grep -E '^[[:space:]]*MYSQL_ROOT_PASSWORD=' .env \
+          | tail -n1 \
+          | sed -E 's/^[[:space:]]*MYSQL_ROOT_PASSWORD=//; s/^["'\'']//; s/["'\'']$//'
+      )"
     fi
 
-    if ! docker inspect mysql >/dev/null 2>&1; then
-        echo "error: docker container 'mysql' not found" >&2
-        return 1
+    if [ -z "$root_pass" ]; then
+      echo "error: MYSQL_ROOT_PASSWORD not set and not found in $project/.env" >&2
+      exit 1
     fi
 
-    if ! docker exec mysql mysqladmin ping -uroot -p"${MYSQL_ROOT_PASSWORD:-root}" --silent >/dev/null 2>&1; then
-        echo "error: cannot connect to MySQL in container 'mysql' (check MYSQL_ROOT_PASSWORD)" >&2
-        return 1
+    if ! docker compose ps --status running --services 2>/dev/null | grep -qx "$service"; then
+      echo "error: compose service '$service' is not running in $project" >&2
+      exit 1
     fi
 
-    if ! docker exec -i mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-root}" -e \
-        "CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-         CREATE USER IF NOT EXISTS '${user}'@'%' IDENTIFIED BY '${pass}';
-         GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${user}'@'%';
-         FLUSH PRIVILEGES;"; then
-        echo "error: failed to create database/user '${db}'" >&2
-        return 1
+    if ! docker compose exec -T -e MYSQL_PWD="$root_pass" "$service" \
+        mysql -uroot -e "SELECT 1" >/dev/null; then
+      echo "error: root login failed for service '$service'" >&2
+      exit 1
     fi
 
-    echo "created db=${db} user=${user}"
+    if ! docker compose exec -T -e MYSQL_PWD="$root_pass" "$service" mysql -uroot -e \
+      "CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+       CREATE USER IF NOT EXISTS '${user}'@'%' IDENTIFIED BY '${pass}';
+       GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${user}'@'%';
+       FLUSH PRIVILEGES;"; then
+      echo "error: failed to create database/user '${db}'" >&2
+      exit 1
+    fi
+
+    echo "created db=${db} user=${user} service=${service} project=${project}"
+  )
 }
 
 # ===== Git archive helpers =====
