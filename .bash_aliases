@@ -305,6 +305,44 @@ docker-logs-with-time() {
     docker logs -f --tail="$lines" -t "$1"
 }
 
+mkdb() {
+  # usage:
+  #   mkdb myapp
+  #   mkdb myapp myuser
+  #   mkdb myapp myuser mypass
+  local db="$1"
+  local user="${2:-$1}"
+  local pass="${3:-$user}"
+
+  if [ -z "$db" ]; then
+    echo "usage: mkdb <database> [username] [password]" >&2
+    echo "  mkdb myapp                 → db/user/pass = myapp" >&2
+    echo "  mkdb myapp appuser         → db=myapp user/pass=appuser" >&2
+    echo "  mkdb myapp appuser secret  → db=myapp user=appuser pass=secret" >&2
+    return 1
+  fi
+
+  if ! docker inspect mysql >/dev/null 2>&1; then
+    echo "error: docker container 'mysql' not found" >&2
+    return 1
+  fi
+
+  if ! docker exec mysql mysqladmin ping -uroot -p"${MYSQL_ROOT_PASSWORD:-root}" --silent >/dev/null 2>&1; then
+    echo "error: cannot connect to MySQL in container 'mysql' (check MYSQL_ROOT_PASSWORD)" >&2
+    return 1
+  fi
+
+  if ! docker exec -i mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD:-root}" -e \
+    "CREATE DATABASE IF NOT EXISTS \`${db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+     CREATE USER IF NOT EXISTS '${user}'@'%' IDENTIFIED BY '${pass}';
+     GRANT ALL PRIVILEGES ON \`${db}\`.* TO '${user}'@'%';
+     FLUSH PRIVILEGES;"; then
+    echo "error: failed to create database/user '${db}'" >&2
+    return 1
+  fi
+
+  echo "created db=${db} user=${user}"
+}
 # ===== Git archive helpers =====
 
 # Create a git archive zip for a project
