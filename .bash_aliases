@@ -305,9 +305,11 @@ docker-logs-with-time() {
 # ============================================
 # HELPER FUNCTIONS – SHARED MYSQL (compose)
 # All run against $DC_SHARED_SERVICES (default ~/docker/shared-services)
-# from any directory. Service defaults to mysql.
+# from any directory. Service defaults to $DC_MYSQL_SERVICE (default mysql).
 # Root password: $MYSQL_ROOT_PASSWORD, else MYSQL_ROOT_PASSWORD in project .env.
 # ============================================
+# Change to mariadb if that is the service name in the compose file.
+export DC_MYSQL_SERVICE="${DC_MYSQL_SERVICE:-mysql}"
 _dc_mysql_project() {
     printf '%s\n' "${DC_SHARED_SERVICES:-$HOME/docker/shared-services}"
 }
@@ -370,7 +372,7 @@ _dc_mysql_scalar() {
 # Create a MySQL user only. No database, no grant.
 # Usage: dc-mkuser <username> [password] [service]
 dc-mkuser() {
-    local user="$1" pass="${2:-$user}" service="${3:-mysql}"
+    local user="$1" pass="${2:-$user}" service="${3:-$DC_MYSQL_SERVICE}"
     local project
     project="$(_dc_mysql_project)"
     if [ -z "$user" ]; then
@@ -387,7 +389,7 @@ dc-mkuser() {
 # Create a MySQL database only. No user, no grant. utf8mb4 / utf8mb4_unicode_ci.
 # Usage: dc-mkdbonly <database> [service]
 dc-mkdbonly() {
-    local db="$1" service="${2:-mysql}"
+    local db="$1" service="${2:-$DC_MYSQL_SERVICE}"
     local project
     project="$(_dc_mysql_project)"
     if [ -z "$db" ]; then
@@ -403,7 +405,7 @@ dc-mkdbonly() {
 # Create database + user + grant. User defaults to the database name, password to the user.
 # Users are created as 'user'@'%'. Usage: dc-mkdb <database> [username] [password] [service]
 dc-mkdb() {
-    local db="$1" user="${2:-$1}" pass="${3:-$user}" service="${4:-mysql}"
+    local db="$1" user="${2:-$1}" pass="${3:-$user}" service="${4:-$DC_MYSQL_SERVICE}"
     local project
     project="$(_dc_mysql_project)"
     if [ -z "$db" ]; then
@@ -422,7 +424,7 @@ dc-mkdb() {
 # Grant an existing user an existing database. Fails if either is missing.
 # Usage: dc-adduser <database> [username] [service]
 dc-adduser() {
-    local db="$1" user="${2:-$1}" service="${3:-mysql}"
+    local db="$1" user="${2:-$1}" service="${3:-$DC_MYSQL_SERVICE}"
     local project user_exists db_exists
     project="$(_dc_mysql_project)"
     if [ -z "$db" ]; then
@@ -449,7 +451,7 @@ dc-adduser() {
 # Drop a database and user. Asks first unless DC_FORCE=1.
 # Usage: dc-rmdb <database> [username] [service]
 dc-rmdb() {
-    local db="$1" user="${2:-$1}" service="${3:-mysql}"
+    local db="$1" user="${2:-$1}" service="${3:-$DC_MYSQL_SERVICE}"
     local project reply
     project="$(_dc_mysql_project)"
     if [ -z "$db" ]; then
@@ -470,6 +472,86 @@ dc-rmdb() {
          DROP USER IF EXISTS '${user}'@'%';
          FLUSH PRIVILEGES;" \
         && echo "dropped db=${db} user=${user} service=${service} project=${project}"
+}
+
+# Recreate the stack AND drop its volumes: every database in it.
+# Dumps everything to ./backups first unless DC_NO_BACKUP=1.
+# Prompts unless DC_FORCE=1.
+# Usage: dc-reset [service...]
+dc-reset() {
+    local project="${DC_SHARED_SERVICES:-$HOME/docker/shared-services}"
+    local mysql_service="${DC_MYSQL_SERVICE:-mysql}"
+    local services="$*"
+    (
+        cd "$project" || { echo "error: project not found: $project" >&2; exit 1; }
+        if [ "${DC_FORCE:-0}" != "1" ]; then
+            printf "This DELETES every volume in %s — every database and all of its data. Continue? [y/N] " "$project"
+            read -r reply
+            case "$reply" in
+                [yY]|[yY][eE][sS]) ;;
+                *) echo "aborted" >&2; exit 1 ;;
+            esac
+        fi
+        local root_pass="${MYSQL_ROOT_PASSWORD:-}"
+        if [ -z "$root_pass" ] && [ -f .env ]; then
+            root_pass="$(
+                grep -E '^[[:space:]]*MYSQL_ROOT_PASSWORD=' .env \
+                    | tail -n1 \
+                    | sed -E 's/^[[:space:]]*MYSQL_ROOT_PASSWORD=//; s/^["'\'']//; s/["'\'']$//'
+            )"
+        fi
+        # A dump before the wipe. down -v has no undo. If the stack is not answering
+        # there is nothing to dump — say so rather than pretending.
+        local backup=""
+        if [ "${DC_NO_BACKUP:-0}" != "1" ] && [ -n "$root_pass" ] \
+            && docker compose exec -T -e MYSQL_PWD="$root_pass" "$mysql_service" \
+                mysql -uroot -e "SELECT 1" >/dev/null 2>&1; then
+            mkdir -p backups
+            backup="backups/all-databases-$(date +%Y%m%d-%H%M%S).sql"
+            if docker compose exec -T -e MYSQL_PWD="$root_pass" "$mysql_service" \
+                mysqldump --all-databases --single-transaction --routines --events -uroot \
+                > "$backup" 2>/dev/null; then
+                echo "backed up to $backup"
+            else
+                echo "warning: the backup failed — fix that, or set DC_NO_BACKUP=1 to reset without one" >&2
+                exit 1
+            fi
+        else
+            echo "note: no backup taken (the stack is not answering, or DC_NO_BACKUP=1)" >&2
+        fi
+        # shellcheck disable=SC2086
+        docker compose down -v $services || exit 1
+        # shellcheck disable=SC2086
+        docker compose up -d $services || exit 1
+        if [ -z "$root_pass" ]; then
+            echo "reset — MYSQL_ROOT_PASSWORD is not set, so the database report is skipped" >&2
+            return 0
+        fi
+        local tries=0
+        until docker compose exec -T -e MYSQL_PWD="$root_pass" "$mysql_service" \
+            mysql -uroot -e "SELECT 1" >/dev/null 2>&1; do
+            tries=$((tries + 1))
+            if [ "$tries" -ge 60 ]; then
+                echo "warning: $mysql_service did not answer within 60s — a fresh volume means it is initialising" >&2
+                return 1
+            fi
+            sleep 1
+        done
+        echo "databases now:"
+        docker compose exec -T -e MYSQL_PWD="$root_pass" "$mysql_service" mysql -uroot -N -B -e "
+            SELECT s.schema_name, COUNT(t.table_name)
+              FROM information_schema.schemata s
+              LEFT JOIN information_schema.tables t ON t.table_schema = s.schema_name
+             WHERE s.schema_name NOT IN ('mysql', 'information_schema', 'performance_schema', 'sys')
+             GROUP BY s.schema_name
+             ORDER BY s.schema_name;" | sed 's/^/  /'
+        echo "volumes were removed — the databases are gone and must be created again"
+        if [ -n "$backup" ]; then
+            echo "restore with:"
+            echo "  cd $project"
+            echo "  docker compose exec -T -e MYSQL_PWD=\"\$MYSQL_ROOT_PASSWORD\" $mysql_service mysql -uroot < $backup"
+        fi
+    )
 }
 
 # ============================================
@@ -586,6 +668,8 @@ ide-update() {
 #   dc-mkdb <database> [user] [pass] [service]
 #   dc-adduser <database> [user] [service]
 #   dc-rmdb <database> [user] [service]     # DC_FORCE=1 skips prompt
+#   dc-reset [service...]                   # down -v && up -d; dumps ./backups first
+#                                           # DC_FORCE=1 skips prompt, DC_NO_BACKUP=1 skips dump
 #   garc <ProjectName> [path...]            # GARC_OUT overrides folder
 #   gout <outdir> <ProjectName> [path...]
 #   gar_one <ProjectName> [path...]         # GAR_ONE_DIR overrides OneDrive path
