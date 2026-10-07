@@ -1,40 +1,40 @@
 # Bash Aliases Collection
 
-A practical Bash toolkit for speeding up common **Docker, Docker Compose, Laravel, Livewire, Git, Node/NPM, and development workflows**.
+A practical Bash toolkit for speeding up common **Docker, Docker Compose, Laravel, Livewire, Git, Node/NPM, WSL, and MySQL** workflows.
 
-The collection provides short aliases for repetitive commands and helper functions for common maintenance tasks.
+Short aliases cover repetitive commands. Helper functions cover cleanup, service shells, shared MySQL, the local WSL stack, and git archives.
+
+The alias file is `dev-aliases.sh`. Copy it to `~/.bash_aliases`, or source it directly.
 
 ---
 
-## ✨ What This Includes
+## What this includes
 
 | Area | What you get |
 |---|---|
-| 🐳 **Docker** | Container, image, network, volume, cleanup, shell, log, and resource shortcuts |
-| 🐙 **Docker Compose** | Start, stop, rebuild, reset, logs, service management, and container access |
-| 🎯 **Laravel** | Artisan shortcuts, generators, migrations, queues, and development helpers |
-| ⚡ **Livewire** | Component, page, form, and layout generators |
-| 🔧 **Git** | Common Git operations and project archive helpers |
-| 📦 **Node/NPM** | Frontend development shortcuts |
-| 🛠️ **Helper Functions** | Safe cleanup, service operations, container shells, logs, and archives |
-
-These are the main categories already covered by the original collection. 
+| Docker | Container, image, network, volume, cleanup, shell, log, and resource shortcuts |
+| Docker Compose | Start, stop, rebuild, reset, logs, and per-service helpers |
+| Laravel | Artisan, generators (`am*`), migrations, queues, storage, Sail |
+| Livewire | Component, page, form, and layout generators |
+| Git | Status, commit, push, pull, soft reset, and archive helpers |
+| Node/NPM | `dev` and `build` |
+| Shared MySQL | Create users and databases on a Compose MySQL service |
+| WSL MySQL | The same jobs against local systemd MySQL |
+| WSL stack | Status, ports, and health for MySQL, PostgreSQL, Redis, Memcached, Mailpit, RabbitMQ |
 
 ---
 
-# 🚀 Installation
+# Installation
 
 ## 1. Copy the aliases file
 
-From the directory containing this file:
-
 ```bash
-cp .bash_aliases ~/.bash_aliases
+cp dev-aliases.sh ~/.bash_aliases
 ```
 
 ## 2. Load it from `~/.bashrc`
 
-Add the following to `~/.bashrc` if it is not already present:
+Add this if it is not already present:
 
 ```bash
 if [ -f ~/.bash_aliases ]; then
@@ -46,673 +46,483 @@ fi
 
 ```bash
 source ~/.bashrc
+# or
+sb
 ```
 
-The original installation flow uses these same three steps: copy the file, source it from `~/.bashrc`, then reload the shell. 
+Optional overrides, set before the file is sourced:
+
+```bash
+export DC_SHARED_SERVICES="$HOME/docker/shared-services"
+export DC_MYSQL_SERVICE="mysql"          # or mariadb
+export MYSQL_ROOT_PASSWORD="secret"      # used by dc-* and wsl-* MySQL helpers
+export GAR_ONE_DIR="/mnt/c/Users/YOU/OneDrive - YOUR_ORG/wsl_project"
+export STACK_SERVICES=(mysql postgresql redis-server memcached mailpit rabbitmq-server)
+```
+
+`STACK_SERVICES` is assigned inside the file. To override it, edit that line or reassign it after sourcing.
 
 ---
 
-# ⚡ Quick Reference
+# Quick reference
 
-## General / Shell
+## General / shell
 
 | Alias | Command | Purpose |
 |---|---|---|
 | `sb` | `source ~/.bashrc` | Reload Bash configuration |
 | `cls` | `clear` | Clear the terminal |
-| `ll` | `ls -lah` | List files with details |
-| `..` | `cd ..` | Go up one directory |
-| `...` | `cd ../..` | Go up two directories |
-| `myip` | `hostname -I` | Show local IP addresses |
-| `ports` | `netstat -tulnp` | Show listening ports |
-
+| `ll` | `ls -lah` | Long listing, including hidden files |
+| `la` | `ls -A` | List almost all files |
+| `l` | `ls -CF` | Column listing |
+| `..` | `cd ..` | Up one directory |
+| `...` | `cd ../..` | Up two directories |
+| `myip` | `hostname -I` | Local IP addresses |
+| `os-v` | `lsb_release -a` | OS version |
+| `ports` | `ss -tulnp` | Listening ports |
+| `all-apps` | `apt-mark showmanual` | Manually installed packages |
+| `p2kill` | `sudo ss -tulpn \| grep` | Find a listener. Does not kill |
+| `fphp` | `/usr/bin/frankenphp php-cli` | PHP via FrankenPHP |
+| `treel` | `tree -L` | Tree to a depth: `treel 2` |
 
 ---
 
-# 🔧 Git
+# Git
 
 | Alias | Command | Purpose |
 |---|---|---|
-| `gs` | `git status` | Show working-tree status |
+| `gs` | `git status` | Working-tree status |
 | `ga` | `git add .` | Stage all changes |
-| `gc` | `git commit -m` | Create a commit with a message |
-| `gp` | `git push` | Push commits to the remote |
-| `gl` | `git pull` | Pull changes from the remote |
-| `greset1` | `git reset --soft HEAD~1` | Undo the last commit and keep changes staged |
-| `greset` | `git update-ref -d HEAD` | Delete the current `HEAD` reference ⚠️ |
+| `gc` | `git commit -m` | Commit with a message |
+| `gp` | `git push` | Push |
+| `gl` | `git pull` | Pull |
+| `greset1` | `git reset --soft HEAD~1` | Undo the last commit, keep changes staged |
 
-> **⚠️ Caution:** `greset` is destructive and should only be used when you understand its effect. 
+`greset` (delete the `HEAD` ref) is intentionally not defined. Use `greset1`.
 
 ---
 
-# 🐳 Docker
+# Node / frontend
 
-## Basic Docker Commands
+| Alias | Command | Purpose |
+|---|---|---|
+| `dev` | `npm run dev` | Start the frontend dev server |
+| `build` | `npm run build` | Production build |
+
+---
+
+# Docker
+
+## Basic
 
 | Alias | Purpose |
 |---|---|
-| `d-ps` | List running containers |
-| `d-psa` | List all containers |
-| `d-images` | List all images |
-| `d-logs` | Follow container logs |
-| `d-logs-n` | Follow the last 100 log lines |
-| `d-top` | Show live resource usage |
-| `d-port` | Show container port mappings |
+| `d-ps` | Running containers |
+| `d-psa` | All containers |
+| `d-images` | Local images |
+| `d-inspect` | Full JSON for a container, image, network, or volume |
+| `d-logs` | Follow a container's logs |
+| `d-logs-n` | Follow logs, last 100 lines first |
+| `d-history` | Image layers |
+| `d-port` | Host-to-container port mappings |
+| `d-top` | Live CPU, memory, and network. Ctrl+C to stop |
 
-
-## Docker Cleanup
+## Cleanup
 
 | Alias | Purpose | Risk |
 |---|---|---|
-| `d-prune` | Remove all unused Docker data | ⚠️ High |
-| `d-prune-containers` | Remove stopped containers | Medium |
-| `d-prune-images` | Remove unused images | Medium |
-| `d-prune-volumes` | Remove unused volumes | ⚠️ High |
-| `d-prune-networks` | Remove unused networks | Low |
+| `d-prune` | Unused containers, images, networks, and volumes | High |
+| `d-prune-containers` | Stopped containers only | Medium |
+| `d-prune-images` | Images not used by any container | Medium |
+| `d-prune-volumes` | Unused volumes. Data in them is deleted | High |
+| `d-prune-networks` | Networks with no connected container | Low |
 
-The original collection marks `d-prune` as a destructive cleanup command. 
-
----
-
-# 🐙 Docker Compose
-
-## Common Commands
-
-| Alias | Command | Purpose |
-|---|---|---|
-| `dc-u` | `docker compose up -d` | Start services in the background |
-| `dc-ub` | `docker compose up -d --build` | Build and start services |
-| `dc-d` | `docker compose down` | Stop and remove containers |
-| `dc-dv` | `docker compose down -v` | Stop containers and remove volumes |
-| `dc-do` | `docker compose down -v --remove-orphans` | Full Compose cleanup |
-| `dc-l` | `docker compose logs -f` | Follow service logs |
-| `dc-ps` | `docker compose ps` | Show service status |
-| `dc-e` | `docker compose exec` | Execute a command inside a service |
-
-
-## Advanced Commands
+## Networks
 
 | Alias | Purpose |
 |---|---|
-| `dc-dbu` | Clean rebuild |
-| `dc-db` | Complete environment reset |
-| `dc-upd` | Force container recreation |
-| `dc-b` | Build without cache |
-| `dc-bup` | Build without cache and start |
-| `dc-down-all` | Remove everything, including images ⚠️ |
+| `dn-ls` | List networks |
+| `dn-inspect` | Subnets, containers, and driver |
+| `dn-create` | Create a bridge network |
+| `dn-prune` | Remove unused networks |
 
+## Volumes
+
+| Alias | Purpose |
+|---|---|
+| `dv-ls` | List volumes |
+| `dv-inspect` | Mount point and labels |
+| `dv-create` | Create a named volume |
+| `dv-prune` | Remove unused volumes. Deletes their data |
 
 ---
 
-# 🎯 Laravel
+# Docker Compose
 
-## Core Shortcuts
+Compose commands use `compose.yaml` in the current directory.
+
+## Common
 
 | Alias | Command | Purpose |
 |---|---|---|
-| `a` | `php artisan` | Short form of Artisan |
-| `crd` | `composer run dev` | Start the Composer development script |
-| `ln` | `laravel new` | Create a new Laravel project |
+| `dc-u` | `docker compose up -d` | Start in the background. Build only if the image is missing |
+| `dc-ub` | `docker compose up -d --build` | Rebuild images, then start |
+| `dc-d` | `docker compose down` | Stop and remove containers and the project network. Volumes stay |
+| `dc-dv` | `docker compose down -v` | Down, and delete volumes declared in the compose file |
+| `dc-do` | `docker compose down -v --remove-orphans` | `down -v`, plus containers no longer in the file |
+| `dc-re` | `docker compose restart` | Restart running services. No rebuild |
+| `dc-l` | `docker compose logs -f` | Follow logs for every service |
+| `dc-l100` | `docker compose logs -f --tail=100` | Follow logs, last 100 lines first |
+| `dc-e` | `docker compose exec` | Run a command in a service: `dc-e app bash` |
+| `dc-ps` | `docker compose ps` | Status of this project's services |
+| `dc-stop` | `docker compose stop` | Stop without removing containers |
+| `dc-start` | `docker compose start` | Start stopped containers without recreating them |
+| `dc-pull` | `docker compose pull` | Pull newer images |
+| `dc-config` | `docker compose config` | Print the resolved compose file |
 
+## Advanced
 
-## Make / Generate Commands
+| Alias | Purpose | Risk |
+|---|---|---|
+| `dc-dbu` | Wipe compose volumes, rebuild, start | High |
+| `dc-db` | Same as `dc-dbu`, plus remove orphans | High |
+| `dc-upd` | Recreate containers even if config did not change | Low |
+| `dc-b` | Build with no cache | Low |
+| `dc-bup` | No-cache build, then start | Low |
+| `dc-down-all` | Remove containers, volumes, project images, and orphans | High |
+
+---
+
+# Laravel
+
+## Core
+
+| Alias | Command | Purpose |
+|---|---|---|
+| `a` | `php artisan` | Artisan shortcut. Other aliases expand through this |
+| `crd` | `composer run dev` | Composer dev script |
+| `pad` | `php artisan dev` | Artisan dev server |
+| `ln` | `laravel new` | New Laravel project |
+
+## Routes, storage, Sail
+
+| Alias | Command | Purpose |
+|---|---|---|
+| `rc` | `route:cache` | Cache routes |
+| `rcl` | `route:clear` | Clear the route cache |
+| `rl` | `route:list` | List routes |
+| `sl` | `storage:link` | Link `public/storage` |
+| `sul` | `storage:unlink` | Remove that link |
+| `sp` | `stub:publish` | Publish stubs |
+| `sail` | project `sail` or `vendor/bin/sail` | Sail wrapper |
+| `sa` | `sail:add` | Add a Sail service |
+| `si` | `sail:install` | Install Sail |
+| `spub` | `sail:publish` | Publish Sail files |
+| `add-sail` | `composer require laravel/sail --dev` | Require Sail |
+| `install-sail` | `php artisan sail:install` | Install Sail |
+
+## Make (`am*`)
 
 | Alias | Creates |
 |---|---|
-| `mctl` | Controller |
-| `mmg` | Migration |
-| `mmo` | Model |
-| `msd` | Seeder |
-| `mf` | Factory |
-| `mr` | Form Request |
-| `mrs` | API Resource |
-| `mmw` | Middleware |
-| `mj` | Job |
-| `mev` | Event |
-| `ml` | Listener |
-| `mnt` | Notification |
-| `mp` | Policy |
-| `mt` | Test |
+| `amc` | Class |
+| `amcmd` | Command |
+| `amcmp` | Component |
+| `amctl` | Controller |
+| `amen` | Enum |
+| `amev` | Event |
+| `amf` | Factory |
+| `ami` | Interface |
+| `amj` | Job |
+| `aml` | Listener |
+| `amm` | Mail |
+| `ammw` | Middleware |
+| `ammg` | Migration |
+| `ammo` | Model |
+| `amnt` | Notification |
+| `amntt` | Notifications table |
+| `amob` | Observer |
+| `amp` | Policy |
+| `ampr` | Provider |
+| `amqb` | Queue batches table |
+| `amqf` | Queue failed-jobs table |
+| `amqt` | Queue jobs table |
+| `amr` | Form request |
+| `amrs` | API resource |
+| `amrule` | Validation rule |
+| `amsc` | Scope |
+| `amsd` | Seeder |
+| `amst` | Sessions table |
+| `amt` | Test |
+| `amtr` | Trait |
+| `amv` | View |
 
+Older names such as `mctl` and `mmo` are not defined. Use `amctl` and `ammo`.
 
-## Database Migrations
+## Migrations (`mg*`)
 
 | Alias | Command | Purpose |
 |---|---|---|
 | `mg` | `migrate` | Run pending migrations |
-| `mgf` | `migrate:fresh` | Drop all tables and recreate them |
-| `mgr` | `migrate:refresh` | Roll back and re-run migrations |
-| `mgb` | `migrate:rollback` | Roll back the latest migration batch |
-| `mgs` | `migrate:status` | Show migration status |
+| `mgf` | `migrate:fresh` | Drop all tables and migrate. Destroys data |
+| `mgi` | `migrate:install` | Create the migrations table |
+| `mgr` | `migrate:refresh` | Roll back and re-run |
+| `mgreset` | `migrate:reset` | Roll back all migrations |
+| `mgb` | `migrate:rollback` | Roll back the latest batch |
+| `mgs` | `migrate:status` | Migration status |
 
-
-## Queue Management
+## Database (`db*`)
 
 | Alias | Command | Purpose |
 |---|---|---|
-| `qw` | `queue:work` | Start a queue worker |
-| `ql` | `queue:listen` | Listen for queued jobs |
+| `dbm` | `db:monitor` | Monitor connections |
+| `dbs` | `db:seed` | Run seeders |
+| `dbsh` | `db:show` | Show database info |
+| `dbt` | `db:table` | Show one table |
+| `dbw` | `db:wipe` | Drop all tables, views, and types |
+
+## Queue
+
+| Alias | Command | Purpose |
+|---|---|---|
+| `qc` | `queue:clear` | Clear a queue |
 | `qf` | `queue:failed` | List failed jobs |
+| `qfl` | `queue:flush` | Flush failed jobs |
+| `qfg` | `queue:forget` | Forget one failed job |
+| `ql` | `queue:listen` | Listen for jobs |
+| `qm` | `queue:monitor` | Monitor queues |
+| `qpb` | `queue:prune-batches` | Prune job batches |
+| `qpf` | `queue:prune-failed` | Prune failed jobs |
+| `qr` | `queue:restart` | Signal workers to restart |
 | `qrt` | `queue:retry` | Retry a failed job |
-| `qr` | `queue:restart` | Restart queue workers |
+| `qrb` | `queue:retry-batch` | Retry a batch |
+| `qw` | `queue:work` | Start a worker |
 
+## Livewire
 
----
-
-# ⚡ Livewire
-
-| Alias | Creates |
+| Alias | Creates / runs |
 |---|---|
 | `mlw` | Livewire component |
-| `mlwp` | Livewire page component |
+| `mlwp` | Livewire page: `mlwp Dashboard` |
+| `lwa` | Livewire attribute |
+| `lwc` | Livewire config |
+| `lwcv` | Convert a component |
 | `lwf` | Livewire form |
 | `lwl` | Livewire layout |
+| `lws` | Publish Livewire stubs |
+| `pstress` | `./vendor/bin/pest stress ` |
 
+## Laravel Idea
+
+| Alias | Purpose |
+|---|---|
+| `ideu` | Remove `vendor/_laravel_idea` and dump autoload |
+| `ide-update` | Same, with status output. Must be run from a Laravel project |
 
 ---
 
-# 🛠️ Helper Functions
+# Helper functions
 
-## Docker Helpers
+## Docker
 
 ```bash
-# Safely clean unused Docker resources while preserving volumes
-docker-clean-safe
-
-# Display a Docker resource overview
-docker-summary
-
-# Open a shell inside a container
-docker-shell <container> [shell]
-
-# Follow container logs with timestamps
-docker-logs-with-time <container> [lines]
+docker-clean-safe                         # prune containers, images, networks; keep volumes
+docker-summary                            # containers, images, volumes, networks
+docker-shell <container> [shell]          # default shell /bin/bash
+docker-logs-with-time <container> [lines] # follow logs with timestamps, default 50 lines
 ```
 
-
-## Docker Compose Service Helpers
+## Compose services
 
 ```bash
-# Rebuild and start a service
-dc-service-up <service>
-
-# Restart a service
-dc-service-re <service>
-
-# Follow logs for a service
-dc-service-logs <service> [lines]
-
-# Open a shell inside a service
-dc-service-shell <service> [shell]
+dc-service-up <service>                   # rebuild and start one service
+dc-service-re <service>                   # restart one service, no rebuild
+dc-service-logs <service> [lines]         # follow one service, default 50 lines
+dc-service-shell <service> [shell]        # shell in a service, default /bin/bash
 ```
 
+## Shared MySQL (Compose)
 
-## Git Archive Helpers
+These run against `$DC_SHARED_SERVICES` (default `~/docker/shared-services`) from any directory. The service defaults to `$DC_MYSQL_SERVICE` (`mysql`). Root password is `$MYSQL_ROOT_PASSWORD`, otherwise `MYSQL_ROOT_PASSWORD` in that project's `.env`.
+
+Users are created as `'user'@'%'`. Password defaults to the username. Database charset is `utf8mb4` / `utf8mb4_unicode_ci`.
 
 ```bash
-# Create an archive in the current directory
-garc <ProjectName> [path...]
+dc-mkuser <username> [password] [service]
+dc-mkdbonly <database> [service]
+dc-mkdb <database> [username] [password] [service]
+dc-adduser <database> [username] [service]   # both must already exist
+dc-rmdb <database> [username] [service]      # asks first; DC_FORCE=1 skips the prompt
+dc-reset [service...]                        # down -v && up -d for the shared project
+```
 
-# Create an archive in the configured OneDrive folder
-gar_one <ProjectName> [path...]
+`dc-reset` dumps `./backups/all-databases-<timestamp>.sql` first, unless `DC_NO_BACKUP=1`. `DC_FORCE=1` skips the confirm prompt. It deletes every volume in that compose project.
 
-# Create an archive in a specific output directory
+## WSL MySQL (local systemd)
+
+Same jobs, against MySQL on `127.0.0.1`. Auth is `$MYSQL_ROOT_PASSWORD` if set, otherwise `sudo mysql` (Ubuntu auth_socket). Each user is created as both `'user'@'%'` and `'user'@'localhost'`.
+
+```bash
+wsl-mkuser <username> [password]
+wsl-mkdbonly <database>
+wsl-mkdb <database> [username] [password]
+wsl-adduser <database> [username]
+wsl-rmdb <database> [username]               # DC_FORCE=1 skips the prompt
+```
+
+## Git archives
+
+```bash
+garc <ProjectName> [path...]                 # ./<ProjectName>.zip; GARC_OUT overrides the folder
 gout <outdir> <ProjectName> [path...]
+gar_one <ProjectName> [path...]              # OneDrive; GAR_ONE_DIR overrides the path
 ```
 
+Default OneDrive path: `/mnt/c/Users/SGL/OneDrive - Contoso/wsl_project`.
 
-## Laravel IDE Helpers
+## WSL local stack
 
-```bash
-# Quickly regenerate IDE helper files
-ideu
+Units come from `STACK_SERVICES`: `mysql`, `postgresql`, `redis-server`, `memcached`, `mailpit`, `rabbitmq-server`. Redis on Ubuntu is `redis-server`, not `redis`.
 
-# Run the full IDE helper update with status output
-ide-update
-```
-
+| Alias / function | Purpose |
+|---|---|
+| `st-mysql` `st-pg` `st-redis` `st-memcached` `st-mailpit` `st-rabbit` | `systemctl status` for one unit |
+| `stack-status` / `stack-active` | `is-active` for every unit |
+| `stack-check` | state, substate, pid, since |
+| `stack-table` | same data as a table |
+| `stack-status-full` | full `systemctl status` for every unit |
+| `stack-ports` | listeners on 3306, 5432, 6379, 11211, 1025, 8025, 5672, 15672 |
+| `stack-health` | status plus mysqladmin, pg_isready, redis, memcached, Mailpit, RabbitMQ |
+| `stack-urls` | RabbitMQ `http://localhost:15672`, Mailpit `http://localhost:8025` |
 
 ---
 
-# 📚 Usage Examples
+# Usage examples
 
-The examples below show typical development workflows and how the aliases can be combined.
-
----
-
-## 🐳 Docker Workflow
-
-### Check the Docker environment
+## Docker
 
 ```bash
-# Show running containers
 d-ps
-
-# Show all containers, including stopped containers
 d-psa
-
-# Show available images
 d-images
-
-# Show container port mappings
-d-port
-
-# Show live CPU and memory usage
+d-port my-app
 d-top
-```
-
-### Inspect application logs
-
-```bash
-# Follow container logs
 d-logs my-app
-
-# Follow the last 100 lines and continue streaming
 d-logs-n my-app
-```
-
-### Open a container shell
-
-```bash
-# Open a shell using the helper
 docker-shell my-app
-
-# Explicitly use Bash
-docker-shell my-app bash
-
-# Explicitly use sh
 docker-shell my-app sh
+docker-logs-with-time my-app 200
+docker-clean-safe
+docker-summary
 ```
 
----
-
-## 🐙 Docker Compose Workflow
-
-### Start a project
+## Compose
 
 ```bash
-# Start existing containers in the background
 dc-u
-
-# Build images first, then start the services
 dc-ub
-
-# Check service status
 dc-ps
-```
-
-### Work with logs
-
-```bash
-# Follow logs for every service
 dc-l
-
-# Follow logs for one service
-dc-service-logs app
-
-# Follow the last 200 lines of a service
+dc-l100
 dc-service-logs app 200
-```
-
-### Run commands inside services
-
-```bash
-# Open a Bash shell in the database service
-dc-e db bash
-
-# Open a shell in the application service
+dc-e app bash
 dc-service-shell app
-
-# Use sh when Bash is unavailable
-dc-service-shell app sh
-```
-
-### Rebuild a single service
-
-```bash
-# Rebuild and start one service
 dc-service-up app
-
-# Restart one service
 dc-service-re app
+dc-config
 ```
 
-### Reset the development environment
+`dc-dv`, `dc-do`, `dc-db`, `dc-dbu`, and `dc-down-all` delete volumes. Use them only when that is the point.
+
+## Laravel
 
 ```bash
-# Stop containers and remove volumes
-dc-dv
-
-# Stop containers, remove volumes, and remove orphans
-dc-do
-
-# Complete project reset
-dc-db
-```
-
-> **Warning:** Reset commands can remove database volumes and development data. Use them only when you intentionally want a clean environment.
-
----
-
-## 🎯 Laravel Workflow
-
-### Start a Laravel project
-
-```bash
-# Create a new Laravel application
 ln my-project
-
-# Enter the project
 cd my-project
-
-# Start the development environment
 crd
-```
 
-### Use Artisan quickly
-
-Instead of typing:
-
-```bash
-php artisan route:list
-```
-
-you can use:
-
-```bash
 a route:list
-```
+rl
 
-The `a` alias is simply a shorter way to run Artisan commands.
+amctl EmployeeController
+ammo Employee
+ammg create_employees_table
+amr StoreEmployeeRequest
+amrs EmployeeResource
+amp EmployeePolicy
+amj ProcessEmployeeImport
 
-### Generate a feature
-
-```bash
-# Create a controller
-mctl EmployeeController
-
-# Create a model
-mmo Employee
-
-# Create a migration
-mmg create_employees_table
-
-# Create a form request
-mr StoreEmployeeRequest
-
-# Create an API resource
-mrs EmployeeResource
-
-# Create a policy
-mp EmployeePolicy
-
-# Create a job
-mj ProcessEmployeeImport
-```
-
-### Typical model + migration workflow
-
-```bash
-# Create the model
-mmo Employee
-
-# Create a migration
-mmg create_employees_table
-
-# Run the migration
 mg
-
-# Check migration status
 mgs
-```
-
-### Working with migrations
-
-```bash
-# Run pending migrations
-mg
-
-# Check migration status
-mgs
-
-# Roll back the latest batch
 mgb
-
-# Refresh all migrations
-mgr
-
-# Drop all tables and rebuild the database
-mgf
 ```
 
-> **Warning:** `mgf` removes the existing database tables before rebuilding them. Do not use it against a production database.
-
----
-
-## ⚡ Livewire Workflow
-
-### Create a Livewire component
+`mgf` and `dbw` destroy the database. Do not run them against production.
 
 ```bash
 mlw EmployeeTable
-```
-
-### Create a Livewire page
-
-```bash
 mlwp Employees/Index
-```
-
-### Create a Livewire form
-
-```bash
 lwf EmployeeForm
-```
-
-### Create a Livewire layout
-
-```bash
 lwl AppLayout
-```
 
-A common feature workflow might look like:
-
-```bash
-# Create the model and migration
-mmo Employee
-mmg create_employees_table
-
-# Create the Livewire page
-mlwp Employees/Index
-
-# Run migrations
-mg
-```
-
----
-
-## 📬 Laravel Queue Workflow
-
-### Start a worker
-
-```bash
 qw
-```
-
-### Monitor failed jobs
-
-```bash
-# List failed jobs
 qf
-
-# Retry a specific failed job
 qrt 5
-```
-
-### Restart workers
-
-After deploying new code:
-
-```bash
 qr
 ```
 
-This tells running queue workers to restart gracefully.
+## Shared and local MySQL
 
----
+```bash
+# Compose MySQL in ~/docker/shared-services
+dc-mkdb attendance attendance secret
+dc-adduser attendance reports
+dc-rmdb attendance
 
-## 🔧 Git Workflow
+# Local systemd MySQL
+wsl-mkdb attendance attendance secret
+wsl-adduser attendance reports
+DC_FORCE=1 wsl-rmdb attendance
+```
 
-### Check your changes
+## Git and archives
 
 ```bash
 gs
-```
-
-### Stage and commit changes
-
-```bash
 ga
-gc "Add employee management aliases"
-```
-
-### Push changes
-
-```bash
+gc "Add employee management"
 gp
-```
-
-### Pull changes
-
-```bash
 gl
-```
-
-### Undo the latest commit but keep the changes
-
-```bash
 greset1
-```
 
-> `greset1` uses a soft reset, so your changes remain available.
-
-### Git workflow example
-
-```bash
-# 1. Check the current state
-gs
-
-# 2. Stage changes
-ga
-
-# 3. Commit
-gc "Update Bash aliases documentation"
-
-# 4. Push
-gp
-```
-
----
-
-## 📦 Project Archive Workflow
-
-### Archive the current project
-
-```bash
-garc MyApp
-```
-
-### Archive selected paths
-
-```bash
 garc MyApp app routes resources
-```
-
-### Archive to OneDrive
-
-```bash
-gar_one MyApp
-```
-
-### Archive to a custom location
-
-```bash
 gout ~/backups MyApp
+GAR_ONE_DIR="/mnt/c/Users/YOU/OneDrive/wsl_project" gar_one MyApp
 ```
 
-### Example backup routine
+## WSL stack
 
 ```bash
-# Create a local backup
-gout ~/backups MyApp
-
-# Create an additional OneDrive backup
-gar_one MyApp
+stack-table
+stack-health
+stack-ports
+stack-urls
+st-redis
 ```
 
----
-
-## 🧰 Helper Function Examples
-
-### Safe Docker cleanup
+## Session sketch
 
 ```bash
-docker-clean-safe
-```
-
-Use this when you want to clean unused Docker resources while keeping volumes.
-
-### View Docker resources
-
-```bash
-docker-summary
-```
-
-### Follow timestamped logs
-
-```bash
-docker-logs-with-time my-app
-```
-
-Or specify the number of lines:
-
-```bash
-docker-logs-with-time my-app 200
-```
-
----
-
-## 🔄 Example: Full Laravel + Docker Development Workflow
-
-A typical project session could look like this:
-
-```bash
-# Go to the project
 cd ~/projects/my-erp
-
-# Start the Docker environment
 dc-ub
-
-# Check services
 dc-ps
-
-# Open the application container
 dc-e app bash
-
-# Inside the container:
+# inside the container
 mg
 mgs
-
-# Leave the container
 exit
-
-# Follow application logs
 dc-service-logs app
-
-# Check Git changes
 gs
-
-# Commit the completed work
 ga
 gc "Update employee management"
 gp
@@ -720,166 +530,96 @@ gp
 
 ---
 
-## 🆘 Troubleshooting Examples
-
-### Check whether services are listening
-
-```bash
-ports
-```
-
-### Check the machine IP address
-
-```bash
-myip
-```
-
-### Reload all aliases after editing `.bash_aliases`
-
-```bash
-sb
-```
-
-### Verify an alias
-
-```bash
-type a
-type dc-u
-type mctl
-```
-
-You can also list the command behind an alias:
-
-```bash
-alias a
-alias dc-u
-alias gs
-```
-
----
-
-## 🧭 Quick "Which Command Should I Use?"
+# Which command
 
 | Task | Command |
 |---|---|
 | Reload Bash | `sb` |
-| Check Git status | `gs` |
-| Start Docker Compose | `dc-u` |
-| Build + start Compose | `dc-ub` |
-| View Compose status | `dc-ps` |
-| Follow Compose logs | `dc-l` |
-| Open a container shell | `docker-shell <container>` |
-| Run Artisan | `a <command>` |
-| Create controller | `mctl <name>` |
-| Create model | `mmo <name>` |
-| Create migration | `mmg <name>` |
+| Find who owns a port | `p2kill :8080` |
+| Git status | `gs` |
+| Undo last commit, keep changes | `greset1` |
+| Start Compose | `dc-u` |
+| Build and start Compose | `dc-ub` |
+| Compose status | `dc-ps` |
+| Compose logs | `dc-l` |
+| Shell in a container | `docker-shell <container>` |
+| Artisan | `a <command>` |
+| Controller | `amctl <name>` |
+| Model | `ammo <name>` |
+| Migration file | `ammg <name>` |
 | Run migrations | `mg` |
-| Check migration status | `mgs` |
-| Create Livewire component | `mlw <name>` |
-| Start queue worker | `qw` |
-| List failed jobs | `qf` |
-| Retry failed job | `qrt <id>` |
-| Create project archive | `garc <ProjectName>` |
-| Archive to OneDrive | `gar_one <ProjectName>` |
-| Show listening ports | `ports` |
+| Livewire component | `mlw <name>` |
+| Queue worker | `qw` |
+| Create a Compose database | `dc-mkdb <db> [user] [pass]` |
+| Create a local database | `wsl-mkdb <db> [user] [pass]` |
+| Stack table | `stack-table` |
+| Project archive | `garc <ProjectName>` |
+
+Check what an alias expands to:
+
+```bash
+type amctl
+alias dc-u
+```
 
 ---
 
-## 💡 Recommended Workflow
+# Customization
 
-For day-to-day development, a simple pattern is:
-
-```bash
-# Start
-dc-ub
-
-# Check
-dc-ps
-
-# Develop
-mctl EmployeeController
-mmo Employee
-mg
-
-# Monitor
-dc-service-logs app
-
-# Verify
-gs
-
-# Commit
-ga
-gc "Implement employee management"
-gp
-```
-
-This keeps the common workflow short while still making each command easy to understand.
-# ⚙️ Customization
-
-## Configure OneDrive
-
-The `gar_one` helper uses a hard-coded OneDrive location. Update it to match your environment:
+OneDrive path for `gar_one`:
 
 ```bash
-local out_dir="/mnt/c/Users/YOUR_USERNAME/OneDrive - YOUR_ORG/wsl_project"
+export GAR_ONE_DIR="/mnt/c/Users/YOUR_USERNAME/OneDrive - YOUR_ORG/wsl_project"
 ```
 
+Shared Compose MySQL:
 
-## Add Your Own Aliases
+```bash
+export DC_SHARED_SERVICES="$HOME/docker/shared-services"
+export DC_MYSQL_SERVICE="mysql"
+export MYSQL_ROOT_PASSWORD="secret"
+```
 
-Add custom aliases to the end of the file:
+Add your own aliases at the end of the file:
 
 ```bash
 # ============================================
 # CUSTOM ALIASES
 # ============================================
-
 alias myalias='my command'
 ```
 
-
 ---
 
-# ⚠️ Safety Notes
-
-Some commands can permanently remove data or change repository state. Use them carefully.
+# Safety
 
 | Command | Action | Risk |
 |---|---|---|
-| `d-prune` | Removes all unused Docker data, including volumes | 🔴 High |
-| `dc-down-all` | Removes containers, images, volumes, and orphaned resources | 🔴 High |
-| `greset` | Deletes the current `HEAD` reference | 🔴 High |
-| `dbw` | Drops all database tables | 🔴 High |
+| `d-prune` | Unused Docker data, including volumes | High |
+| `d-prune-volumes` / `dv-prune` | Delete unused volume data | High |
+| `dc-dv` `dc-do` `dc-db` `dc-dbu` `dc-down-all` | Delete Compose volumes | High |
+| `dc-reset` | Delete every volume in the shared project | High |
+| `dc-rmdb` / `wsl-rmdb` | Drop a database and its user | High |
+| `mgf` | Drop all tables and re-migrate | High |
+| `dbw` | Drop all tables, views, and types | High |
+| `greset1` | Undo the last commit. Changes stay staged | Medium |
 
-These destructive commands are explicitly identified in the original README. 
+`dc-rmdb`, `wsl-rmdb`, and `dc-reset` ask before they run. `DC_FORCE=1` skips that prompt. `dc-reset` writes a dump first unless `DC_NO_BACKUP=1`.
 
-> **Best practice:** Read the command definition before running any destructive alias in a production or important development environment.
+`p2kill` only searches. It does not kill the process.
 
----
-
-# ✅ Requirements
-
-Make sure the following are installed:
-
-- **Bash 4.0+**
-- **Docker**
-- **Docker Compose**
-- **PHP**
-- **Composer**
-- **Git**
-- **Node.js**
-- **npm**
-
-These are the dependencies documented by the original project. 
+Read the definition before running a destructive alias against anything you care about.
 
 ---
 
-# 📄 License
+# Requirements
 
-**MIT License** — Free to use, modify, and distribute according to the terms of the license. 
+- Bash 4.0+ (arrays in the stack helpers)
+- Docker and Docker Compose v2 (`docker compose`)
+- PHP, Composer, and the Laravel installer for the Laravel aliases
+- Git
+- Node.js and npm for `dev` / `build`
+- MySQL client, and `sudo` for the WSL helpers when `MYSQL_ROOT_PASSWORD` is unset
+- `ss` from iproute2 (`ports`, `p2kill`, `stack-ports`)
 
----
-
-## 💡 Tip
-
-Keep aliases short and memorable, but avoid aliases that hide destructive commands. For team environments, prefer aliases that are easy for another developer to understand without needing to inspect the Bash file.
+FrankenPHP, Sail, Livewire, Pest, Redis, PostgreSQL, Memcached, Mailpit, and RabbitMQ are only needed for the aliases that call them.
