@@ -1,7 +1,17 @@
 cat > ~/.bash_aliases <<'EOF'
+
 #!/bin/bash
 # Docker, Laravel & Dev Aliases
 # source ~/.bashrc   (or: source /path/to/this/file)
+# ============================================
+
+# Shared MySQL compose project. Override in the shell or in ~/.bashrc before sourcing.
+export DC_MYSQL_SERVICE="${DC_MYSQL_SERVICE:-mysql}"
+export DC_SHARED_SERVICES="${DC_SHARED_SERVICES:-$HOME/docker/shared-services}"
+
+# systemd units for the local WSL stack. Redis on Ubuntu is redis-server, not redis.
+STACK_SERVICES=(mysql postgresql redis-server memcached mailpit rabbitmq-server)
+
 # ============================================
 # GENERAL / SHELL
 # ============================================
@@ -29,7 +39,6 @@ alias gc='git commit -m'
 alias gp='git push'
 alias gl='git pull'
 alias greset1='git reset --soft HEAD~1'   # undo last commit, keep changes staged
-# greset (delete HEAD ref) intentionally omitted — use greset1
 
 # ============================================
 # NODE / FRONTEND
@@ -40,69 +49,65 @@ alias build='npm run build'
 # ============================================
 # DOCKER – BASIC
 # ============================================
-alias d-ps='docker ps'                                          # running containers only
-alias d-psa='docker ps -a'                                      # all containers, including stopped
-alias d-images='docker images'                                  # local images
-alias d-inspect='docker inspect'                                # full JSON for a container, image, network, or volume
-alias d-logs='docker logs -f'                                   # follow a container's stdout/stderr
-alias d-logs-n='docker logs -f --tail=100'                      # follow logs, start at the last 100 lines
-alias d-history='docker history'                                # image layers and the command that created each
-alias d-port='docker port'                                      # host-to-container port mappings
-alias d-top='docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"'  # live CPU, memory, and network; Ctrl+C to stop
+alias d-ps='docker ps'
+alias d-psa='docker ps -a'
+alias d-images='docker images'
+alias d-inspect='docker inspect'
+alias d-logs='docker logs -f'
+alias d-logs-n='docker logs -f --tail=100'
+alias d-history='docker history'
+alias d-port='docker port'
+alias d-top='docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"'
 
 # ============================================
 # DOCKER – PRUNE / CLEANUP
 # ============================================
-alias d-prune='docker system prune -af --volumes'               # CAUTION: unused containers, images, networks, and volumes
-alias d-prune-containers='docker container prune -f'            # stopped containers only
-alias d-prune-images='docker image prune -af'                   # images not used by any container
-alias d-prune-volumes='docker volume prune -f'                  # unused volumes; data in them is deleted
-alias d-prune-networks='docker network prune -f'                # networks with no connected container
+alias d-prune='docker system prune -af --volumes'   # CAUTION: unused containers, images, networks, and volumes
+alias d-prune-containers='docker container prune -f'
+alias d-prune-images='docker image prune -af'
+alias d-prune-volumes='docker volume prune -f'
+alias d-prune-networks='docker network prune -f'
 
 # ============================================
 # DOCKER – NETWORKS
 # ============================================
-alias dn-ls='docker network ls'                                 # list networks
-alias dn-inspect='docker network inspect'                       # subnets, containers, and driver for one network
-alias dn-create='docker network create'                         # create a bridge network
-alias dn-prune='docker network prune -f'                        # remove unused networks
+alias dn-ls='docker network ls'
+alias dn-inspect='docker network inspect'
+alias dn-create='docker network create'
+alias dn-prune='docker network prune -f'
 
 # ============================================
 # DOCKER – VOLUMES
 # ============================================
-alias dv-ls='docker volume ls'                                  # list volumes
-alias dv-inspect='docker volume inspect'                        # mount point and labels
-alias dv-prune='docker volume prune -f'                         # remove unused volumes; deletes their data
-alias dv-create='docker volume create'                          # create a named volume
+alias dv-ls='docker volume ls'
+alias dv-inspect='docker volume inspect'
+alias dv-prune='docker volume prune -f'
+alias dv-create='docker volume create'
 
 # ============================================
-# DOCKER COMPOSE – BASIC
+# DOCKER COMPOSE
 # Uses compose.yaml in the current directory.
 # ============================================
-alias dc-u='docker compose up -d'                               # start services in the background; build only if image is missing
-alias dc-ub='docker compose up -d --build'                      # rebuild images, then start
-alias dc-d='docker compose down'                                # stop and remove containers and project network; volumes stay
-alias dc-dv='docker compose down -v'                            # down, and delete volumes declared in the compose file
-alias dc-do='docker compose down -v --remove-orphans'           # down -v, and remove containers no longer in the file
-alias dc-re='docker compose restart'                            # restart running services; no rebuild
-alias dc-l='docker compose logs -f'                             # follow logs for every service
-alias dc-l100='docker compose logs -f --tail=100'               # follow logs, last 100 lines first
-alias dc-e='docker compose exec'                                # run a command in a running service: dc-e app bash
-alias dc-ps='docker compose ps'                                 # status of this project's services
-alias dc-stop='docker compose stop'                             # stop without removing containers
-alias dc-start='docker compose start'                           # start stopped containers without recreating them
-alias dc-pull='docker compose pull'                             # pull newer images
-alias dc-config='docker compose config'                         # print the resolved compose file; check before up
-
-# ============================================
-# DOCKER COMPOSE – COMBINED / ADVANCED
-# ============================================
-alias dc-dbu='docker compose down -v && docker compose up -d --build'                              # wipe compose volumes, rebuild, start
-alias dc-db='docker compose down -v --remove-orphans && docker compose up -d --build'              # same, plus remove orphans
-alias dc-upd='docker compose up -d --force-recreate'                                               # recreate containers even if config did not change
-alias dc-b='docker compose build --no-cache'                                                        # build with no cache
-alias dc-bup='docker compose build --no-cache && docker compose up -d'                             # no-cache build, then start
-alias dc-down-all='docker compose down --rmi all -v --remove-orphans'                              # remove containers, volumes, project images, and orphans
+alias dc-u='docker compose up -d'
+alias dc-ub='docker compose up -d --build'
+alias dc-d='docker compose down'
+alias dc-dv='docker compose down -v'
+alias dc-do='docker compose down -v --remove-orphans'
+alias dc-re='docker compose restart'
+alias dc-l='docker compose logs -f'
+alias dc-l100='docker compose logs -f --tail=100'
+alias dc-e='docker compose exec'
+alias dc-ps='docker compose ps'
+alias dc-stop='docker compose stop'
+alias dc-start='docker compose start'
+alias dc-pull='docker compose pull'
+alias dc-config='docker compose config'
+alias dc-dbu='docker compose down -v && docker compose up -d --build'
+alias dc-db='docker compose down -v --remove-orphans && docker compose up -d --build'
+alias dc-upd='docker compose up -d --force-recreate'
+alias dc-b='docker compose build --no-cache'
+alias dc-bup='docker compose build --no-cache && docker compose up -d'
+alias dc-down-all='docker compose down --rmi all -v --remove-orphans'
 
 # ============================================
 # LARAVEL – CORE
@@ -113,21 +118,13 @@ alias pad='php artisan dev'
 alias ln='laravel new'
 
 # ============================================
-# LARAVEL – ROUTES
+# LARAVEL – ROUTES / STORAGE / SAIL
 # ============================================
 alias rc='a route:cache'
 alias rcl='a route:clear'
 alias rl='a route:list'
-
-# ============================================
-# LARAVEL – STORAGE
-# ============================================
 alias sl='a storage:link'
 alias sul='a storage:unlink'
-
-# ============================================
-# LARAVEL – STUBS & SAIL
-# ============================================
 alias sp='a stub:publish'
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
 alias sa='a sail:add'
@@ -188,7 +185,7 @@ alias amtr='a make:trait'
 alias amv='a make:view'
 
 # ============================================
-# LARAVEL – MIGRATIONS (mg*)
+# LARAVEL – MIGRATIONS / DATABASE / LIVEWIRE
 # ============================================
 alias mg='a migrate'
 alias mgf='a migrate:fresh'
@@ -197,19 +194,11 @@ alias mgr='a migrate:refresh'
 alias mgreset='a migrate:reset'
 alias mgb='a migrate:rollback'
 alias mgs='a migrate:status'
-
-# ============================================
-# LARAVEL – DATABASE (db*)
-# ============================================
 alias dbm='a db:monitor'
 alias dbs='a db:seed'
 alias dbsh='a db:show'
 alias dbt='a db:table'
 alias dbw='a db:wipe'
-
-# ============================================
-# LIVEWIRE (lw*)
-# ============================================
 alias lwa='a livewire:attribute'
 alias lwc='a livewire:config'
 alias lwcv='a livewire:convert'
@@ -223,7 +212,6 @@ alias pstress='./vendor/bin/pest stress '
 # ============================================
 # HELPER FUNCTIONS – DOCKER
 # ============================================
-# Containers, images, and networks only. Volumes are kept.
 docker-clean-safe() {
     echo "Cleaning containers, images, and networks..."
     docker container prune -f
@@ -232,7 +220,6 @@ docker-clean-safe() {
     echo "Done. Volumes were preserved."
 }
 
-# Containers, images, volumes, and networks in one view.
 docker-summary() {
     echo "=== CONTAINERS ==="
     docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
@@ -244,7 +231,7 @@ docker-summary() {
     docker network ls
 }
 
-# Shell in a running container by name. Usage: docker-shell <container> [shell]
+# Usage: docker-shell <container> [shell]
 docker-shell() {
     if [ -z "$1" ]; then
         echo "Usage: docker-shell <container-name> [shell=/bin/bash]"
@@ -254,7 +241,7 @@ docker-shell() {
     docker exec -it "$1" "$shell"
 }
 
-# Rebuild and start one compose service. Usage: dc-service-up <service>
+# Usage: dc-service-up <service>
 dc-service-up() {
     if [ -z "$1" ]; then
         echo "Usage: dc-service-up <service-name>"
@@ -263,7 +250,7 @@ dc-service-up() {
     docker compose up -d --build "$1"
 }
 
-# Restart one compose service. No rebuild. Usage: dc-service-re <service>
+# Usage: dc-service-re <service>
 dc-service-re() {
     if [ -z "$1" ]; then
         echo "Usage: dc-service-re <service-name>"
@@ -272,7 +259,7 @@ dc-service-re() {
     docker compose restart "$1"
 }
 
-# Follow one service's logs. Usage: dc-service-logs <service> [lines=50]
+# Usage: dc-service-logs <service> [lines=50]
 dc-service-logs() {
     if [ -z "$1" ]; then
         echo "Usage: dc-service-logs <service-name> [lines=50]"
@@ -282,7 +269,7 @@ dc-service-logs() {
     docker compose logs -f --tail="$lines" "$1"
 }
 
-# Shell in a compose service. Usage: dc-service-shell <service> [shell=/bin/bash]
+# Usage: dc-service-shell <service> [shell=/bin/bash]
 dc-service-shell() {
     if [ -z "$1" ]; then
         echo "Usage: dc-service-shell <service-name> [shell=/bin/bash]"
@@ -292,7 +279,7 @@ dc-service-shell() {
     docker compose exec "$1" "$shell"
 }
 
-# Follow container logs with timestamps. Usage: docker-logs-with-time <container> [lines=50]
+# Usage: docker-logs-with-time <container> [lines=50]
 docker-logs-with-time() {
     if [ -z "$1" ]; then
         echo "Usage: docker-logs-with-time <container-name> [lines=50]"
@@ -304,14 +291,12 @@ docker-logs-with-time() {
 
 # ============================================
 # HELPER FUNCTIONS – SHARED MYSQL (compose)
-# All run against $DC_SHARED_SERVICES (default ~/docker/shared-services)
-# from any directory. Service defaults to $DC_MYSQL_SERVICE (default mysql).
+# Runs against $DC_SHARED_SERVICES from any directory.
+# Service defaults to $DC_MYSQL_SERVICE.
 # Root password: $MYSQL_ROOT_PASSWORD, else MYSQL_ROOT_PASSWORD in project .env.
 # ============================================
-# Change to mariadb if that is the service name in the compose file.
-export DC_MYSQL_SERVICE="${DC_MYSQL_SERVICE:-mysql}"
 _dc_mysql_project() {
-    printf '%s\n' "${DC_SHARED_SERVICES:-$HOME/docker/shared-services}"
+    printf '%s\n' "$DC_SHARED_SERVICES"
 }
 
 _dc_mysql_root_pass() {
@@ -326,7 +311,6 @@ _dc_mysql_root_pass() {
     printf '%s\n' "$root_pass"
 }
 
-# Run SQL as root. Prints mysql stderr on failure.
 # Usage: _dc_mysql_exec <service> <sql>
 _dc_mysql_exec() {
     local service="$1" sql="$2"
@@ -356,7 +340,7 @@ _dc_mysql_exec() {
     )
 }
 
-# Scalar query. Usage: _dc_mysql_scalar <service> <sql>
+# Usage: _dc_mysql_scalar <service> <sql>
 _dc_mysql_scalar() {
     local service="$1" sql="$2"
     local project root_pass
@@ -369,7 +353,6 @@ _dc_mysql_scalar() {
     )
 }
 
-# Create a MySQL user only. No database, no grant.
 # Usage: dc-mkuser <username> [password] [service]
 dc-mkuser() {
     local user="$1" pass="${2:-$user}" service="${3:-$DC_MYSQL_SERVICE}"
@@ -386,7 +369,6 @@ dc-mkuser() {
         && echo "created user=${user} service=${service} project=${project}"
 }
 
-# Create a MySQL database only. No user, no grant. utf8mb4 / utf8mb4_unicode_ci.
 # Usage: dc-mkdbonly <database> [service]
 dc-mkdbonly() {
     local db="$1" service="${2:-$DC_MYSQL_SERVICE}"
@@ -402,8 +384,7 @@ dc-mkdbonly() {
         && echo "created db=${db} service=${service} project=${project}"
 }
 
-# Create database + user + grant. User defaults to the database name, password to the user.
-# Users are created as 'user'@'%'. Usage: dc-mkdb <database> [username] [password] [service]
+# Usage: dc-mkdb <database> [username] [password] [service]
 dc-mkdb() {
     local db="$1" user="${2:-$1}" pass="${3:-$user}" service="${4:-$DC_MYSQL_SERVICE}"
     local project
@@ -421,7 +402,6 @@ dc-mkdb() {
         && echo "created db=${db} user=${user} service=${service} project=${project}"
 }
 
-# Grant an existing user an existing database. Fails if either is missing.
 # Usage: dc-adduser <database> [username] [service]
 dc-adduser() {
     local db="$1" user="${2:-$1}" service="${3:-$DC_MYSQL_SERVICE}"
@@ -448,8 +428,8 @@ dc-adduser() {
         && echo "granted db=${db} user=${user} service=${service} project=${project}"
 }
 
-# Drop a database and user. Asks first unless DC_FORCE=1.
 # Usage: dc-rmdb <database> [username] [service]
+# DC_FORCE=1 skips the prompt.
 dc-rmdb() {
     local db="$1" user="${2:-$1}" service="${3:-$DC_MYSQL_SERVICE}"
     local project reply
@@ -474,13 +454,12 @@ dc-rmdb() {
         && echo "dropped db=${db} user=${user} service=${service} project=${project}"
 }
 
-# Recreate the stack AND drop its volumes: every database in it.
-# Dumps everything to ./backups first unless DC_NO_BACKUP=1.
-# Prompts unless DC_FORCE=1.
 # Usage: dc-reset [service...]
+# down -v && up -d. Dumps ./backups first unless DC_NO_BACKUP=1.
+# DC_FORCE=1 skips the prompt.
 dc-reset() {
-    local project="${DC_SHARED_SERVICES:-$HOME/docker/shared-services}"
-    local mysql_service="${DC_MYSQL_SERVICE:-mysql}"
+    local project="$DC_SHARED_SERVICES"
+    local mysql_service="$DC_MYSQL_SERVICE"
     local services="$*"
     (
         cd "$project" || { echo "error: project not found: $project" >&2; exit 1; }
@@ -500,8 +479,6 @@ dc-reset() {
                     | sed -E 's/^[[:space:]]*MYSQL_ROOT_PASSWORD=//; s/^["'\'']//; s/["'\'']$//'
             )"
         fi
-        # A dump before the wipe. down -v has no undo. If the stack is not answering
-        # there is nothing to dump — say so rather than pretending.
         local backup=""
         if [ "${DC_NO_BACKUP:-0}" != "1" ] && [ -n "$root_pass" ] \
             && docker compose exec -T -e MYSQL_PWD="$root_pass" "$mysql_service" \
@@ -555,11 +532,148 @@ dc-reset() {
 }
 
 # ============================================
+# HELPER FUNCTIONS – WSL MYSQL (local systemd)
+# Same jobs as dc-mk*, against the host MySQL on 127.0.0.1.
+# Auth: $MYSQL_ROOT_PASSWORD if set, otherwise sudo mysql (auth_socket).
+# Users are created as both 'user'@'%' and 'user'@'localhost'.
+# ============================================
+_wsl_sql_escape() {
+    printf '%s' "$1" | sed "s/'/''/g"
+}
+
+_wsl_mysql() {
+    if [ -n "${MYSQL_ROOT_PASSWORD:-}" ]; then
+        MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot -h 127.0.0.1 -P "${MYSQL_PORT:-3306}" "$@"
+        return
+    fi
+    sudo mysql "$@"
+}
+
+# Usage: _wsl_mysql_exec <sql>
+_wsl_mysql_exec() {
+    local sql="$1"
+    if ! _wsl_mysql -e "SELECT 1" >/dev/null; then
+        echo "error: local root login failed (set MYSQL_ROOT_PASSWORD, or use sudo mysql)" >&2
+        return 1
+    fi
+    _wsl_mysql -e "$sql"
+}
+
+# Usage: _wsl_mysql_scalar <sql>
+_wsl_mysql_scalar() {
+    _wsl_mysql -N -B -e "$1" 2>/dev/null
+}
+
+# Usage: wsl-mkuser <username> [password]
+wsl-mkuser() {
+    local user="$1" pass="${2:-$user}"
+    local user_sql pass_sql
+    if [ -z "$user" ]; then
+        echo "usage: wsl-mkuser <username> [password]" >&2
+        return 1
+    fi
+    user_sql="$(_wsl_sql_escape "$user")"
+    pass_sql="$(_wsl_sql_escape "$pass")"
+    _wsl_mysql_exec \
+        "CREATE USER IF NOT EXISTS '${user_sql}'@'%' IDENTIFIED BY '${pass_sql}';
+         CREATE USER IF NOT EXISTS '${user_sql}'@'localhost' IDENTIFIED BY '${pass_sql}';
+         FLUSH PRIVILEGES;" \
+        && echo "created user=${user} host=wsl"
+}
+
+# Usage: wsl-mkdbonly <database>
+wsl-mkdbonly() {
+    local db="$1" db_sql
+    if [ -z "$db" ]; then
+        echo "usage: wsl-mkdbonly <database>" >&2
+        return 1
+    fi
+    db_sql="$(_wsl_sql_escape "$db")"
+    _wsl_mysql_exec \
+        "CREATE DATABASE IF NOT EXISTS \`${db_sql}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" \
+        && echo "created db=${db} host=wsl"
+}
+
+# Usage: wsl-mkdb <database> [username] [password]
+wsl-mkdb() {
+    local db="$1" user="${2:-$1}" pass="${3:-$user}"
+    local db_sql user_sql pass_sql
+    if [ -z "$db" ]; then
+        echo "usage: wsl-mkdb <database> [username] [password]" >&2
+        return 1
+    fi
+    db_sql="$(_wsl_sql_escape "$db")"
+    user_sql="$(_wsl_sql_escape "$user")"
+    pass_sql="$(_wsl_sql_escape "$pass")"
+    _wsl_mysql_exec \
+        "CREATE DATABASE IF NOT EXISTS \`${db_sql}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+         CREATE USER IF NOT EXISTS '${user_sql}'@'%' IDENTIFIED BY '${pass_sql}';
+         CREATE USER IF NOT EXISTS '${user_sql}'@'localhost' IDENTIFIED BY '${pass_sql}';
+         GRANT ALL PRIVILEGES ON \`${db_sql}\`.* TO '${user_sql}'@'%';
+         GRANT ALL PRIVILEGES ON \`${db_sql}\`.* TO '${user_sql}'@'localhost';
+         FLUSH PRIVILEGES;" \
+        && echo "created db=${db} user=${user} host=wsl"
+}
+
+# Usage: wsl-adduser <database> [username]
+wsl-adduser() {
+    local db="$1" user="${2:-$1}"
+    local db_sql user_sql user_exists db_exists
+    if [ -z "$db" ]; then
+        echo "usage: wsl-adduser <database> [username]" >&2
+        return 1
+    fi
+    db_sql="$(_wsl_sql_escape "$db")"
+    user_sql="$(_wsl_sql_escape "$user")"
+    user_exists="$(_wsl_mysql_scalar "SELECT COUNT(*) FROM mysql.user WHERE user='${user_sql}';")"
+    db_exists="$(_wsl_mysql_scalar "SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name='${db_sql}';")"
+    if [ "${user_exists:-0}" = "0" ]; then
+        echo "error: user '${user}' does not exist (use wsl-mkuser or wsl-mkdb)" >&2
+        return 1
+    fi
+    if [ "${db_exists:-0}" != "1" ]; then
+        echo "error: database '${db}' does not exist (use wsl-mkdb or wsl-mkdbonly)" >&2
+        return 1
+    fi
+    _wsl_mysql_exec \
+        "GRANT ALL PRIVILEGES ON \`${db_sql}\`.* TO '${user_sql}'@'%';
+         GRANT ALL PRIVILEGES ON \`${db_sql}\`.* TO '${user_sql}'@'localhost';
+         FLUSH PRIVILEGES;" \
+        && echo "granted db=${db} user=${user} host=wsl"
+}
+
+# Usage: wsl-rmdb <database> [username]
+# DC_FORCE=1 skips the prompt.
+wsl-rmdb() {
+    local db="$1" user="${2:-$1}" reply
+    local db_sql user_sql
+    if [ -z "$db" ]; then
+        echo "usage: wsl-rmdb <database> [username]" >&2
+        return 1
+    fi
+    if [ "${DC_FORCE:-0}" != "1" ]; then
+        printf "DROP database '%s' and user '%s' on local WSL MySQL? [y/N] " "$db" "$user"
+        read -r reply
+        case "$reply" in
+            [yY]|[yY][eE][sS]) ;;
+            *) echo "aborted" >&2; return 1 ;;
+        esac
+    fi
+    db_sql="$(_wsl_sql_escape "$db")"
+    user_sql="$(_wsl_sql_escape "$user")"
+    _wsl_mysql_exec \
+        "DROP DATABASE IF EXISTS \`${db_sql}\`;
+         DROP USER IF EXISTS '${user_sql}'@'%';
+         DROP USER IF EXISTS '${user_sql}'@'localhost';
+         FLUSH PRIVILEGES;" \
+        && echo "dropped db=${db} user=${user} host=wsl"
+}
+
+# ============================================
 # GIT ARCHIVE HELPERS
 # ============================================
 # Usage: garc <ProjectName> [path...]
-# Default output: ./<ProjectName>.zip
-# Override folder with GARC_OUT.
+# Default output: ./<ProjectName>.zip. Override folder with GARC_OUT.
 garc() {
     local project="${1:?Usage: garc <ProjectName> [path...]}"
     shift
@@ -599,7 +713,6 @@ gout() {
 # LARAVEL IDEA
 # ============================================
 alias ideu='rm -rf vendor/_laravel_idea && composer dump-autoload'
-
 ide-update() {
     echo "=== Updating Laravel Idea helper code ==="
     if [ ! -f "composer.json" ]; then
@@ -620,6 +733,87 @@ ide-update() {
 }
 
 # ============================================
+# WSL LOCAL DEV STACK
+# Units come from STACK_SERVICES. Override before sourcing if a name differs.
+# ============================================
+alias st-mysql='systemctl status mysql --no-pager'
+alias st-pg='systemctl status postgresql --no-pager'
+alias st-redis='systemctl status redis-server --no-pager'
+alias st-memcached='systemctl status memcached --no-pager'
+alias st-mailpit='systemctl status mailpit --no-pager'
+alias st-rabbit='systemctl status rabbitmq-server --no-pager'
+
+stack-status() {
+    local svc
+    for svc in "${STACK_SERVICES[@]}"; do
+        printf "%-18s: " "$svc"
+        systemctl is-active "$svc"
+    done
+}
+
+stack-active() {
+    stack-status
+}
+
+stack-check() {
+    local svc state sub pid ts
+    for svc in "${STACK_SERVICES[@]}"; do
+        state=$(systemctl show "$svc" -p ActiveState --value 2>/dev/null)
+        sub=$(systemctl show   "$svc" -p SubState    --value 2>/dev/null)
+        pid=$(systemctl show   "$svc" -p MainPID     --value 2>/dev/null)
+        ts=$(systemctl show    "$svc" -p ActiveEnterTimestamp --value 2>/dev/null)
+        printf "%-18s: %-8s %-8s pid=%-6s since %s\n" \
+            "$svc" "$state" "$sub" "$pid" "$ts"
+    done
+}
+
+stack-table() {
+    local svc state sub pid ts
+    printf "%-18s %-10s %-10s %-8s %s\n" "SERVICE" "STATE" "SUB" "PID" "SINCE"
+    printf "%-18s %-10s %-10s %-8s %s\n" "──────────────────" "──────────" "──────────" "────────" "─────────────────────────"
+    for svc in "${STACK_SERVICES[@]}"; do
+        state=$(systemctl show "$svc" -p ActiveState --value 2>/dev/null)
+        sub=$(systemctl show   "$svc" -p SubState    --value 2>/dev/null)
+        pid=$(systemctl show   "$svc" -p MainPID     --value 2>/dev/null)
+        ts=$(systemctl show    "$svc" -p ActiveEnterTimestamp --value 2>/dev/null)
+        printf "%-18s %-10s %-10s %-8s %s\n" "$svc" "$state" "$sub" "$pid" "$ts"
+    done
+}
+
+stack-status-full() {
+    local svc
+    for svc in "${STACK_SERVICES[@]}"; do
+        echo "════════════════════════════════════════════════════════════════"
+        echo "  $svc"
+        echo "════════════════════════════════════════════════════════════════"
+        systemctl status "$svc" --no-pager
+        echo
+    done
+}
+
+stack-ports() {
+    ss -tlnp | grep -E ":(3306|5432|6379|11211|1025|8025|5672|15672)\b"
+}
+
+stack-health() {
+    sudo -v
+    stack-status
+    echo
+    echo "--- Connectivity ---"
+    mysqladmin ping --silent 2>/dev/null && echo "mysql: alive" || echo "mysql: check auth"
+    pg_isready -h 127.0.0.1 -p 5432
+    redis-cli ping
+    nc -z -w1 127.0.0.1 11211 && echo "memcached: OK" || echo "memcached: FAIL"
+    curl -s -o /dev/null -w "mailpit: HTTP %{http_code}\n" http://localhost:8025/api/v1/info
+    sudo rabbitmq-diagnostics ping 2>/dev/null | tail -1
+}
+
+stack-urls() {
+    printf "%-12s %s\n" "RabbitMQ:" "http://localhost:15672"
+    printf "%-12s %s\n" "Mailpit:"  "http://localhost:8025"
+}
+
+# ============================================
 # USAGE
 # ============================================
 #
@@ -629,7 +823,6 @@ ide-update() {
 #           treel 2               # tree -L 2
 #
 # GIT:      gs  ga  gc "msg"  gp  gl  greset1
-#
 # NODE:     dev  build
 #
 # DOCKER:   d-ps  d-psa  d-images  d-inspect <c>  d-logs <c>  d-logs-n <c>
@@ -670,10 +863,19 @@ ide-update() {
 #   dc-rmdb <database> [user] [service]     # DC_FORCE=1 skips prompt
 #   dc-reset [service...]                   # down -v && up -d; dumps ./backups first
 #                                           # DC_FORCE=1 skips prompt, DC_NO_BACKUP=1 skips dump
+#   wsl-mkuser <username> [password]        # local systemd MySQL
+#   wsl-mkdbonly <database>
+#   wsl-mkdb <database> [user] [pass]
+#   wsl-adduser <database> [user]
+#   wsl-rmdb <database> [user]              # DC_FORCE=1 skips prompt
 #   garc <ProjectName> [path...]            # GARC_OUT overrides folder
 #   gout <outdir> <ProjectName> [path...]
 #   gar_one <ProjectName> [path...]         # GAR_ONE_DIR overrides OneDrive path
 #   ideu / ide-update
+#
+# STACK:    st-mysql  st-pg  st-redis  st-memcached  st-mailpit  st-rabbit
+#           stack-status  stack-active  stack-check  stack-table
+#           stack-status-full  stack-ports  stack-health  stack-urls
 #
 # ============================================
 # END OF ALIASES
